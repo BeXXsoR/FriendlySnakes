@@ -19,6 +19,10 @@ CYAN = (51, 255, 255)
 ORANGE = (255, 128, 0)
 GREY = (192, 192, 192)
 BG_COLOR = WHITE
+ORIENT_UP = (0, -1)
+ORIENT_DOWN = (0, 1)
+ORIENT_LEFT = (-1, 0)
+ORIENT_RIGHT = (1, 0)
 FPS = 30
 MAP_TO_SCREEN_RATIO = 0.9
 BASE_MAP = [
@@ -53,10 +57,10 @@ BASE_MAP = [
 class Game:
 	"""The main game class"""
 
-	def __init__(self, player_names: [str], player_colors: [(int, int, int)]):
+	def __init__(self, player_names: [str], player_colors: [(int, int, int)], player_controls: [{}]):
 		self.clock = pygame.time.Clock()
 		self.level = Level()
-		self.snakes = [Snake(name, color) for name, color in zip(player_names, player_colors)]
+		self.snakes = [Snake(name, color, controls) for name, color, controls in zip(player_names, player_colors, player_controls)]
 		self.init_snake_pos()
 		self.graphics = Graphics(self.level.num_rows, self.level.num_cols)
 		# crashes is a list of tuples of positions. For each crash that occurred, it holds the coordinates of the
@@ -65,20 +69,26 @@ class Game:
 
 	def init_snake_pos(self) -> None:
 		"""Initialize the positions of the snakes"""
-		poss = [[(5, 14), (5, 13), (5, 12), (5, 11)],
-				[(21, 11), (21, 12), (21, 13), (21, 14)],
-				[(11, 5), (12, 5), (13, 5), (14, 5)],
-				[(11, 21), (12, 21), (13, 21), (14, 21)]]
+		poss = [[(14, 5), (13, 5), (12, 5), (11, 5)],
+				[(11, 21), (12, 21), (13, 21), (14, 21)],
+				[(5, 11), (5, 12), (5, 13), (5, 14)],
+				[(21, 14), (21, 13), (21, 12), (21, 11)]]
 		for snake, pos in zip(self.snakes, poss):
 			snake.pos = pos
 
 	def game_loop(self) -> None:
+		"""Main game loop"""
 		is_running = True
 		while is_running:
 			for event in pygame.event.get():
+				# print(event)
 				if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
 					# Quit
 					is_running = False
+				if event.type == pygame.KEYDOWN:
+					# Update orientation of snake
+					for snake in self.snakes:
+						snake.update_orientation(event.key)
 			self.update_snakes()
 			self.clock.tick(FPS)
 			self.graphics.update_display(self.level, self.snakes, self.crashes)
@@ -96,6 +106,8 @@ class Game:
 					self.crashes.append((snake.head, new_square))
 				case _:
 					pass
+		# Check for crashes with same snake
+		self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos in new_posis if new_pos[0] in new_pos[1:]])
 		# Check for crashes between snakes
 		self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos, other_pos in itertools.product(new_posis, new_posis) if new_pos != other_pos and new_pos[0] in other_pos])
 		# Update real snake positions if no crash happened
@@ -116,9 +128,12 @@ class Level:
 class Snake:
 	"""The class for the players/ snakes"""
 
-	def __init__(self, name, color):
+	def __init__(self, name: str, color: (int, int, int), controls: {}):
 		self.name = name
 		self.color = color
+		# controls is a dict for the inputs that control the snake. Keys are the keyboard keys as pygame constants,
+		# values are the orientations (as (int, int) tuples)
+		self.controls = controls
 		self._pos = None
 		self.head = None
 		self.tail = None
@@ -134,8 +149,12 @@ class Snake:
 		self._pos = new_pos
 		self.head = new_pos[0]
 		self.tail = new_pos[-1]
-		# Update orientation (0=up, 1=left, 2=down, 3=right)
 		self.orientation = utils.subtract_tuples(self.head, self.pos[1])
+
+	def update_orientation(self, key) -> None:
+		cur_orient = utils.subtract_tuples(self.head, self._pos[1])
+		if key in self.controls and utils.add_tuples([self.controls[key], cur_orient]) != (0, 0):
+			self.orientation = self.controls[key]
 
 
 class Graphics:
@@ -145,7 +164,7 @@ class Graphics:
 		self.square_size = int(min(self.main_surface.get_width() * MAP_TO_SCREEN_RATIO / num_cols, self.main_surface.get_height() * MAP_TO_SCREEN_RATIO / num_rows))
 		start_pos = utils.subtract_tuples(self.main_surface.get_rect().center,
 										  (self.square_size * num_cols / 2.0, self.square_size * num_rows / 2.0))
-		self.square_posis = [[(start_pos[0] + j * self.square_size, start_pos[1] + i * self.square_size) for j in range(num_cols)] for i in range(num_rows)]
+		self.square_posis = [[(start_pos[0] + i * self.square_size, start_pos[1] + j * self.square_size) for j in range(num_cols)] for i in range(num_rows)]
 
 	def update_display(self, level: Level, snakes: [Snake], crashes: [((int, int), (int, int))]) -> None:
 		"""Draw everything onto the screen"""
@@ -179,6 +198,14 @@ class Graphics:
 
 # ----- Main script ----
 if __name__ == "__main__":
-	game = Game(["Player1", "Player2", "Player3", "Player4"], [GREEN, BLUE, CYAN, PINK])
+	player_names = ["Player1", "Player2", "Player3", "Player4"]
+	player_colors = [GREEN, BLUE, CYAN, PINK]
+	player_controls = [
+		{pygame.K_UP: ORIENT_UP, pygame.K_LEFT: ORIENT_LEFT, pygame.K_DOWN: ORIENT_DOWN, pygame.K_RIGHT: ORIENT_RIGHT},
+		{pygame.K_w: ORIENT_UP, pygame.K_a: ORIENT_LEFT, pygame.K_s: ORIENT_DOWN, pygame.K_d: ORIENT_RIGHT},
+		{pygame.K_KP8: ORIENT_UP, pygame.K_KP4: ORIENT_LEFT, pygame.K_KP5: ORIENT_DOWN, pygame.K_KP6: ORIENT_RIGHT},
+		{pygame.K_i: ORIENT_UP, pygame.K_j: ORIENT_LEFT, pygame.K_k: ORIENT_DOWN, pygame.K_l: ORIENT_RIGHT}]
+	# game = Game(player_names, player_colors, player_controls)
+	game = Game(["Player1"], [GREEN], [{pygame.K_UP: ORIENT_UP, pygame.K_LEFT: ORIENT_LEFT, pygame.K_DOWN: ORIENT_DOWN, pygame.K_RIGHT: ORIENT_RIGHT}])
 	game.game_loop()
 	sys.exit()
