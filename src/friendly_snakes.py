@@ -4,6 +4,7 @@
 import utils
 import sys
 import itertools
+import json
 import pygame
 
 pygame.init()
@@ -25,6 +26,7 @@ ORIENT_LEFT = (-1, 0)
 ORIENT_RIGHT = (1, 0)
 FPS = 30
 MAP_TO_SCREEN_RATIO = 0.9
+FILENAME_LEVELS = "../res/levels.json"
 BASE_MAP = [
 	"w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w",
 	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
@@ -54,12 +56,38 @@ BASE_MAP = [
 
 
 # ----- Classes --------
+class Communicator:
+	"""Class for interacting between different parts of the game, e.g. start menu and game engine"""
+	def __init__(self):
+		player_names = ["Player1", "Player2", "Player3", "Player4"]
+		player_colors = [GREEN, BLUE, CYAN, PINK]
+		player_controls = [
+			{pygame.K_UP: ORIENT_UP, pygame.K_LEFT: ORIENT_LEFT, pygame.K_DOWN: ORIENT_DOWN, pygame.K_RIGHT: ORIENT_RIGHT},
+			{pygame.K_w: ORIENT_UP, pygame.K_a: ORIENT_LEFT, pygame.K_s: ORIENT_DOWN, pygame.K_d: ORIENT_RIGHT},
+			{pygame.K_KP8: ORIENT_UP, pygame.K_KP4: ORIENT_LEFT, pygame.K_KP5: ORIENT_DOWN, pygame.K_KP6: ORIENT_RIGHT},
+			{pygame.K_i: ORIENT_UP, pygame.K_j: ORIENT_LEFT, pygame.K_k: ORIENT_DOWN, pygame.K_l: ORIENT_RIGHT}]
+		self.start_menu = None
+		self.levels = []
+		self.read_level_infos()
+		self.game = Game(player_names, player_colors, player_controls, self.levels[1])
+		# self.game = Game(["Player1"], [GREEN], [{pygame.K_UP: ORIENT_UP, pygame.K_LEFT: ORIENT_LEFT, pygame.K_DOWN: ORIENT_DOWN, pygame.K_RIGHT: ORIENT_RIGHT}], self.levels[0])
+
+	def read_level_infos(self) -> None:
+		"""Reads the level infos from the json file"""
+		with (open(FILENAME_LEVELS)) as file_levels:
+			data = json.load(file_levels)
+		for level_info in data:
+			self.levels.append(Level(level_info))
+
+	def start_game(self):
+		self.game.game_loop()
+
+
 class Game:
 	"""The main game class"""
-
-	def __init__(self, player_names: [str], player_colors: [(int, int, int)], player_controls: [{}]):
+	def __init__(self, player_names: [str], player_colors: [(int, int, int)], player_controls: [{}], level):
 		self.clock = pygame.time.Clock()
-		self.level = Level()
+		self.level = level
 		self.snakes = [Snake(name, color, controls) for name, color, controls in zip(player_names, player_colors, player_controls)]
 		self.init_snake_pos()
 		self.graphics = Graphics(self.level.num_rows, self.level.num_cols)
@@ -69,19 +97,15 @@ class Game:
 
 	def init_snake_pos(self) -> None:
 		"""Initialize the positions of the snakes"""
-		poss = [[(14, 5), (13, 5), (12, 5), (11, 5)],
-				[(11, 21), (12, 21), (13, 21), (14, 21)],
-				[(5, 11), (5, 12), (5, 13), (5, 14)],
-				[(21, 14), (21, 13), (21, 12), (21, 11)]]
-		for snake, pos in zip(self.snakes, poss):
+		for snake, pos in zip(self.snakes, self.level.start_pos):
 			snake.pos = pos
 
 	def game_loop(self) -> None:
 		"""Main game loop"""
+		self.graphics.update_display(self.level, self.snakes, self.crashes)
 		is_running = True
 		while is_running:
 			for event in pygame.event.get():
-				# print(event)
 				if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
 					# Quit
 					is_running = False
@@ -118,11 +142,36 @@ class Game:
 
 class Level:
 	"""The class for the levels"""
-
-	def __init__(self):
-		self.map = utils.strings_to_objects(BASE_MAP)
+	def __init__(self, level_info: {}):
+		self.name = None
+		self.map = []
+		self.start_pos = []
+		self.items = []
+		self.trg_score = None
+		self.profiles = []
+		for k, v in level_info.items():
+			if k == "map":
+				self.map = utils.strings_to_objects(v)
+				self.start_pos = self.get_start_pos(v)
+			else:
+				setattr(self, k, v)
 		self.num_cols = len(self.map)
 		self.num_rows = len(self.map[0])
+
+	def get_start_pos(self, map_str: [str]):
+		start_pos = []
+		sep = ','
+		for row, line in enumerate(map_str):
+			for col, value in enumerate(line.split(sep)):
+				if len(value) == 3 and value[0] == 's':
+					player_idx = int(value[1]) - 1
+					body_idx = int(value[2]) - 1
+					while len(start_pos) <= player_idx:
+						start_pos.append([])
+					while len(start_pos[player_idx]) <= body_idx:
+						start_pos[player_idx].append(tuple())
+					start_pos[player_idx][body_idx] = (col, row)
+		return start_pos
 
 
 class Snake:
@@ -176,12 +225,10 @@ class Graphics:
 				match obj:
 					case utils.Objects.WALL:
 						pygame.draw.rect(self.main_surface, wall_color, pygame.rect.Rect(square_pos, (self.square_size, self.square_size)))
-						# self.main_surface.fill(wall_color, pygame.rect.Rect(square_pos, (self.square_size, self.square_size)))
 		# Draw snakes
 		for snake in snakes:
 			for pos in snake.pos:
 				pygame.draw.rect(self.main_surface, snake.color, pygame.rect.Rect(self.square_posis[pos[0]][pos[1]], (self.square_size, self.square_size)))
-				# self.main_surface.fill(snake.color, pygame.rect.Rect(self.square_posis[pos[0]][pos[1]], (self.square_size, self.square_size)))
 		# Draw crashes
 		radius1 = self.square_size / 2.0 * 0.7
 		radius2 = self.square_size / 2.0 * 0.8
@@ -198,14 +245,5 @@ class Graphics:
 
 # ----- Main script ----
 if __name__ == "__main__":
-	player_names = ["Player1", "Player2", "Player3", "Player4"]
-	player_colors = [GREEN, BLUE, CYAN, PINK]
-	player_controls = [
-		{pygame.K_UP: ORIENT_UP, pygame.K_LEFT: ORIENT_LEFT, pygame.K_DOWN: ORIENT_DOWN, pygame.K_RIGHT: ORIENT_RIGHT},
-		{pygame.K_w: ORIENT_UP, pygame.K_a: ORIENT_LEFT, pygame.K_s: ORIENT_DOWN, pygame.K_d: ORIENT_RIGHT},
-		{pygame.K_KP8: ORIENT_UP, pygame.K_KP4: ORIENT_LEFT, pygame.K_KP5: ORIENT_DOWN, pygame.K_KP6: ORIENT_RIGHT},
-		{pygame.K_i: ORIENT_UP, pygame.K_j: ORIENT_LEFT, pygame.K_k: ORIENT_DOWN, pygame.K_l: ORIENT_RIGHT}]
-	# game = Game(player_names, player_colors, player_controls)
-	game = Game(["Player1"], [GREEN], [{pygame.K_UP: ORIENT_UP, pygame.K_LEFT: ORIENT_LEFT, pygame.K_DOWN: ORIENT_DOWN, pygame.K_RIGHT: ORIENT_RIGHT}])
-	game.game_loop()
-	sys.exit()
+	comm = Communicator()
+	sys.exit(comm.start_game())

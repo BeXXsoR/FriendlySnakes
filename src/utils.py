@@ -1,3 +1,5 @@
+"""A helper module"""
+
 import itertools
 from enum import Enum
 
@@ -14,30 +16,31 @@ def string_to_object(string: str) -> Objects:
 		case _: return Objects.NONE
 
 
-def strings_to_objects(strings: [[str]], sep: str = ",") -> [[Objects]]:
+def strings_to_objects(strings: [str], sep: str = ",") -> [[Objects]]:
 	"""Translate a whole map of strings to the corresponding objects"""
 	return [[string_to_object(string) for string in line.split(sep)] for line in strings]
 
 
-def add_tuples(tuple_list: [()]) -> [()]:
+def add_tuples(tuple_list: list[tuple[float]]) -> tuple:
 	"""Add all tuples in the list itemwise"""
 	return tuple([sum(items) for items in zip(*tuple_list)])
 
 
-def subtract_tuples(tuple1: tuple, tuple2: tuple) -> tuple:
+def subtract_tuples(tuple1: tuple[float], tuple2: tuple[float]) -> tuple[float]:
 	"""Subtract tuples itemwise"""
-	return tuple([a - b for a, b in itertools.zip_longest(tuple1, tuple2, fillvalue=0)])
+	return tuple([a - b for a, b in itertools.zip_longest(tuple1, tuple2, fillvalue=0.0)])
 
 
-def multiply_tuple(tuple1: tuple, scalar: float) -> tuple:
+def multiply_tuple(tuple1: tuple[float], scalar: float) -> tuple[float]:
 	"""Multiply tuple with a scalar itemwise"""
 	return tuple([a * scalar for a in tuple1])
 
 
-def mult_tuple_to_int(tuple1: tuple, scalar: float) -> tuple:
+def mult_tuple_to_int(tuple1: tuple[float], scalar: float) -> tuple[int]:
 	"""Multiply tuple with a scalar itemwise and cast the result to integer"""
 	return tuple([int(a * scalar) for a in tuple1])
 
 
-def get_tuple_signs(tuple1: tuple) -> tuple:
+def get_tuple_signs(tuple1: tuple[int]) -> tuple[int]:
+	"""Map a tuple of numbers to a tuple of 1, 0 or -1, based on the sign of each integer"""
 	return tuple([1 if a > 0 else -1 if a < 0 else 0 for a in tuple1])
