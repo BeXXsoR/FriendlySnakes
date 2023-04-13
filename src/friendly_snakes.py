@@ -20,39 +20,16 @@ CYAN = (51, 255, 255)
 ORANGE = (255, 128, 0)
 GREY = (192, 192, 192)
 BG_COLOR = WHITE
-ORIENT_UP = (0, -1)
-ORIENT_DOWN = (0, 1)
-ORIENT_LEFT = (-1, 0)
-ORIENT_RIGHT = (1, 0)
+ORIENT_UP = (-1, 0)
+ORIENT_DOWN = (1, 0)
+ORIENT_LEFT = (0, -1)
+ORIENT_RIGHT = (0, 1)
 FPS = 30
 MAP_TO_SCREEN_RATIO = 0.9
-FILENAME_LEVELS = "../res/levels.json"
-BASE_MAP = [
-	"w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w, , , , , , , , , ,t1,b1,b1,h1, , , , , , , , , , ,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w, , , ,h3, , , , , , , , , , , , , , , ,t4, , , ,w",
-	"w, , , ,b3, , , , , , , , , , , , , , , ,b4, , , ,w",
-	"w, , , ,b3, , , , , , , , , , , , , , , ,b4, , , ,w",
-	"w, , , ,t3, , , , , , , , , , , , , , , ,h4, , , ,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w, , , , , , , , , ,h2,b2,b2,t2, , , , , , , , , , ,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
-	"w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w"]
+FILENAME_LEVEL_INFO = "../res/levels.json"
+FILENAME_ITEMS = {utils.Objects.APPLE: "../res/apple.png", utils.Objects.MELON: "../res/melon.png", utils.Objects.COFFEE: "../res/coffee.png"}
+EATABLE_GROWS = {utils.Objects.APPLE: 1, utils.Objects.MELON: 3}
+UPDATE_SNAKES = [pygame.event.custom_type() for _ in range(4)]
 
 
 # ----- Classes --------
@@ -69,14 +46,14 @@ class Communicator:
 		self.start_menu = None
 		self.levels = []
 		self.read_level_infos()
-		self.game = Game(player_names, player_colors, player_controls, self.levels[1])
-		# self.game = Game(["Player1"], [GREEN], [{pygame.K_UP: ORIENT_UP, pygame.K_LEFT: ORIENT_LEFT, pygame.K_DOWN: ORIENT_DOWN, pygame.K_RIGHT: ORIENT_RIGHT}], self.levels[0])
+		# self.game = Game(player_names, player_colors, player_controls, self.levels[1])
+		self.game = Game(player_names[:1], player_colors[:1], player_controls[:1], self.levels[1])
 
 	def read_level_infos(self) -> None:
 		"""Reads the level infos from the json file"""
-		with (open(FILENAME_LEVELS)) as file_levels:
-			data = json.load(file_levels)
-		for level_info in data:
+		with (open(FILENAME_LEVEL_INFO)) as file_level_info:
+			level_infos = json.load(file_level_info)
+		for level_info in level_infos:
 			self.levels.append(Level(level_info))
 
 	def start_game(self):
@@ -88,12 +65,13 @@ class Game:
 	def __init__(self, player_names: [str], player_colors: [(int, int, int)], player_controls: [{}], level):
 		self.clock = pygame.time.Clock()
 		self.level = level
-		self.snakes = [Snake(name, color, controls) for name, color, controls in zip(player_names, player_colors, player_controls)]
+		self.snakes = [Snake(name, idx, color, controls) for idx, (name, color, controls) in enumerate(zip(player_names, player_colors, player_controls))]
 		self.init_snake_pos()
 		self.graphics = Graphics(self.level.num_rows, self.level.num_cols)
 		# crashes is a list of tuples of positions. For each crash that occurred, it holds the coordinates of the
 		# two squares between which the crash happened
 		self.crashes = []
+		self.upd_snake_events = [pygame.event.Event(event_id, {"snake_idx": idx}) for idx, event_id in enumerate(UPDATE_SNAKES[:len(self.snakes)])]
 
 	def init_snake_pos(self) -> None:
 		"""Initialize the positions of the snakes"""
@@ -104,39 +82,83 @@ class Game:
 		"""Main game loop"""
 		self.graphics.update_display(self.level, self.snakes, self.crashes)
 		is_running = True
+		# Initialize snake timer
+		for snake in self.snakes:
+			pygame.time.set_timer(self.upd_snake_events[snake.idx], int(1000 / snake.speed))
+		# start game loop
+		self.graphics.update_display(self.level, self.snakes, self.crashes)
 		while is_running:
+			snakes_to_update = []
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
 					# Quit
 					is_running = False
-				if event.type == pygame.KEYDOWN:
+				elif event.type == pygame.KEYDOWN:
 					# Update orientation of snake
 					for snake in self.snakes:
 						snake.update_orientation(event.key)
-			self.update_snakes()
+				elif event.type in UPDATE_SNAKES:
+					# Update position of snake
+					# print(event)
+					snakes_to_update.append(self.snakes[event.snake_idx])
+			# Update display
+			# time_passed += self.clock.tick()
+			# snakes_to_update = self.get_snakes_to_update(time_passed)
+			if snakes_to_update:
+				self.update_snakes(snakes_to_update)
+				self.graphics.update_display(self.level, self.snakes, self.crashes)
+				for snake in snakes_to_update:
+					pygame.time.set_timer(self.upd_snake_events[snake.idx], int(1000 / snake.speed))
 			self.clock.tick(FPS)
-			self.graphics.update_display(self.level, self.snakes, self.crashes)
-			pygame.time.delay(250)
+			# pygame.time.delay(int(1.000 / max([snake.speed for snake in self.snakes])))
 
-	def update_snakes(self) -> None:
+	# def update_snake_wo_considering_other_snakes(self, snake):
+	# 	new_square = utils.add_tuples([snake.head, snake.orientation])
+	# 	obj_at_new_pos = self.level.map[new_square[0]][new_square[1]]
+	# 	match obj_at_new_pos:
+	# 		case utils.Objects.WALL:
+	# 			self.crashes.append((snake.head, new_square))
+	# 		case eatable if eatable in utils.Eatable:
+	# 			snake.grow(EATABLE_GROWS[eatable])
+	# 			self.level.map[new_square[0]][new_square[1]] = utils.Objects.NONE
+	# 		case _:
+	# 			pass
+	# 	if snake.is_growing > 0:
+	# 		return [new_square] + snake.pos
+	# 	else:
+	# 		return [new_square] + snake.pos[:-1]
+
+	def update_snakes(self, snakes_to_upd: []) -> None:
 		"""Update the position of the snakes"""
 		new_posis = []
-		# update snake positions locally and check for crashes with obstacles
-		for snake in self.snakes:
+		remaining_posis = [snake.pos for snake in self.snakes if snake not in snakes_to_upd]
+		# update snake positions locally and check for collisions with obstacles
+		for snake in snakes_to_upd:
 			new_square = utils.add_tuples([snake.head, snake.orientation])
-			new_posis.append([new_square] + snake.pos[:-1])
-			match self.level.map[new_square[0]][new_square[1]]:
+			obj_at_new_pos = self.level.map[new_square[0]][new_square[1]]
+			match obj_at_new_pos:
 				case utils.Objects.WALL:
 					self.crashes.append((snake.head, new_square))
+				case utils.Objects.COFFEE:
+					snake.speed = min(2 * snake.speed, 1000)
+					self.level.map[new_square[0]][new_square[1]] = utils.Objects.NONE
+				case eatable if eatable in utils.Eatable:
+					snake.grow(EATABLE_GROWS[eatable])
+					self.level.map[new_square[0]][new_square[1]] = utils.Objects.NONE
 				case _:
 					pass
+			if snake.is_growing > 0:
+				new_posis.append([new_square] + snake.pos)
+			else:
+				new_posis.append([new_square] + snake.pos[:-1])
 		# Check for crashes with same snake
 		self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos in new_posis if new_pos[0] in new_pos[1:]])
-		# Check for crashes between snakes
+		# Check for crashes with other snakes
 		self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos, other_pos in itertools.product(new_posis, new_posis) if new_pos != other_pos and new_pos[0] in other_pos])
+		self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos, other_pos in itertools.product(new_posis, remaining_posis) if new_pos[0] in other_pos])
 		# Update real snake positions if no crash happened
 		if not self.crashes:
-			for snake, new_pos in zip(self.snakes, new_posis):
+			for snake, new_pos in zip(snakes_to_upd, new_posis):
 				snake.pos = new_pos
 
 
@@ -170,15 +192,16 @@ class Level:
 						start_pos.append([])
 					while len(start_pos[player_idx]) <= body_idx:
 						start_pos[player_idx].append(tuple())
-					start_pos[player_idx][body_idx] = (col, row)
+					start_pos[player_idx][body_idx] = (row, col)
 		return start_pos
 
 
 class Snake:
 	"""The class for the players/ snakes"""
 
-	def __init__(self, name: str, color: (int, int, int), controls: {}):
+	def __init__(self, name: str, idx: int, color: (int, int, int), controls: {}):
 		self.name = name
+		self.idx = idx
 		self.color = color
 		# controls is a dict for the inputs that control the snake. Keys are the keyboard keys as pygame constants,
 		# values are the orientations (as (int, int) tuples)
@@ -187,6 +210,8 @@ class Snake:
 		self.head = None
 		self.tail = None
 		self.orientation = None
+		self.speed = 4
+		self.is_growing = 0
 
 	@property
 	def pos(self) -> [(int, int)]:
@@ -199,36 +224,47 @@ class Snake:
 		self.head = new_pos[0]
 		self.tail = new_pos[-1]
 		self.orientation = utils.subtract_tuples(self.head, self.pos[1])
+		self.is_growing = max(self.is_growing - 1, 0)
 
 	def update_orientation(self, key) -> None:
+		"""Update the orientation based on the pressed key"""
 		cur_orient = utils.subtract_tuples(self.head, self._pos[1])
 		if key in self.controls and utils.add_tuples([self.controls[key], cur_orient]) != (0, 0):
 			self.orientation = self.controls[key]
 
+	def grow(self, size: int):
+		"""Let the snake grow by the given size"""
+		self.is_growing += size
+
 
 class Graphics:
 	"""The class for displaying all graphics on the screen"""
-	def __init__(self, num_rows, num_cols):
+	def __init__(self, num_rows: int, num_cols: int):
 		self.main_surface = pygame.display.set_mode((0, 0))
 		self.square_size = int(min(self.main_surface.get_width() * MAP_TO_SCREEN_RATIO / num_cols, self.main_surface.get_height() * MAP_TO_SCREEN_RATIO / num_rows))
 		start_pos = utils.subtract_tuples(self.main_surface.get_rect().center,
 										  (self.square_size * num_cols / 2.0, self.square_size * num_rows / 2.0))
-		self.square_posis = [[(start_pos[0] + i * self.square_size, start_pos[1] + j * self.square_size) for j in range(num_cols)] for i in range(num_rows)]
+		self.square_posis = [[(start_pos[0] + j * self.square_size, start_pos[1] + i * self.square_size) for j in range(num_cols)] for i in range(num_rows)]
+		self.imgs_orig = {obj: pygame.image.load(filename).convert_alpha() for obj, filename in FILENAME_ITEMS.items()}
+		self.imgs_scaled = {obj: pygame.transform.scale(img_orig, (self.square_size, self.square_size))
+							for obj, img_orig in self.imgs_orig.items()}
 
 	def update_display(self, level: Level, snakes: [Snake], crashes: [((int, int), (int, int))]) -> None:
 		"""Draw everything onto the screen"""
 		self.main_surface.fill(BG_COLOR)
 		# Draw level
 		wall_color = GREY
-		for obj_row, square_pos_row in zip(level.map, self.square_posis):
-			for obj, square_pos in zip(obj_row, square_pos_row):
-				match obj:
-					case utils.Objects.WALL:
-						pygame.draw.rect(self.main_surface, wall_color, pygame.rect.Rect(square_pos, (self.square_size, self.square_size)))
+		for row, obj_row in enumerate(level.map):
+			for col, obj in enumerate(obj_row):
+				square_pos = self.grid_to_screen_pos((row, col))
+				if obj == utils.Objects.WALL:
+					pygame.draw.rect(self.main_surface, wall_color, pygame.rect.Rect(square_pos, (self.square_size, self.square_size)))
+				elif obj != utils.Objects.NONE:
+					self.main_surface.blit(self.imgs_scaled[obj], square_pos)
 		# Draw snakes
 		for snake in snakes:
 			for pos in snake.pos:
-				pygame.draw.rect(self.main_surface, snake.color, pygame.rect.Rect(self.square_posis[pos[0]][pos[1]], (self.square_size, self.square_size)))
+				pygame.draw.rect(self.main_surface, snake.color, pygame.rect.Rect(self.grid_to_screen_pos(pos), (self.square_size, self.square_size)))
 		# Draw crashes
 		radius1 = self.square_size / 2.0 * 0.7
 		radius2 = self.square_size / 2.0 * 0.8
