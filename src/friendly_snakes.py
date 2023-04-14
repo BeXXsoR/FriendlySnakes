@@ -24,11 +24,16 @@ ORIENT_UP = (-1, 0)
 ORIENT_DOWN = (1, 0)
 ORIENT_LEFT = (0, -1)
 ORIENT_RIGHT = (0, 1)
-FPS = 30
+MIN_SNAKE_SIZE = 4
+MIN_SNAKE_SPEED = 1
+MAX_SNAKE_SPEED = 1000
+FPS = 60
 MAP_TO_SCREEN_RATIO = 0.9
 FILENAME_LEVEL_INFO = "../res/levels.json"
-FILENAME_ITEMS = {utils.Objects.APPLE: "../res/apple.png", utils.Objects.MELON: "../res/melon.png", utils.Objects.COFFEE: "../res/coffee.png"}
-EATABLE_GROWS = {utils.Objects.APPLE: 1, utils.Objects.MELON: 3}
+FILENAME_ITEMS = {utils.Objects.APPLE: "../res/apple.png", utils.Objects.MELON: "../res/melon.png",
+				  utils.Objects.COFFEE: "../res/coffee.png", utils.Objects.TEA: "../res/tea.png", utils.Objects.BEER: "../res/beer.png"}
+GROWING_SIZES = {utils.Objects.APPLE: 1, utils.Objects.MELON: 3}
+SPEEDING_FACTORS = {utils.Objects.COFFEE: 2, utils.Objects.TEA: 0.5}
 UPDATE_SNAKES = [pygame.event.custom_type() for _ in range(4)]
 
 
@@ -47,7 +52,7 @@ class Communicator:
 		self.levels = []
 		self.read_level_infos()
 		# self.game = Game(player_names, player_colors, player_controls, self.levels[1])
-		self.game = Game(player_names[:1], player_colors[:1], player_controls[:1], self.levels[1])
+		self.game = Game(player_names[:1], player_colors[:1], player_controls[:1], self.levels[0])
 
 	def read_level_infos(self) -> None:
 		"""Reads the level infos from the json file"""
@@ -139,23 +144,27 @@ class Game:
 			match obj_at_new_pos:
 				case utils.Objects.WALL:
 					self.crashes.append((snake.head, new_square))
-				case utils.Objects.COFFEE:
-					snake.speed = min(2 * snake.speed, 1000)
+				case item if item in utils.Speeding:
+					snake.adjust_speed(SPEEDING_FACTORS[item])
 					self.level.map[new_square[0]][new_square[1]] = utils.Objects.NONE
-				case eatable if eatable in utils.Eatable:
-					snake.grow(EATABLE_GROWS[eatable])
+				case item if item in utils.Growing:
+					snake.grow(GROWING_SIZES[item])
+					self.level.map[new_square[0]][new_square[1]] = utils.Objects.NONE
+				case utils.Objects.BEER:
+					snake.transpose_controls()
 					self.level.map[new_square[0]][new_square[1]] = utils.Objects.NONE
 				case _:
 					pass
-			if snake.is_growing > 0:
-				new_posis.append([new_square] + snake.pos)
-			else:
-				new_posis.append([new_square] + snake.pos[:-1])
+			new_posis.append([new_square] + (snake.pos if snake.is_growing > 0 else snake.pos[:-1]))
+			# if snake.is_growing > 0:
+			# 	new_posis.append([new_square] + snake.pos)
+			# else:
+			# 	new_posis.append([new_square] + snake.pos[:-1])
 		# Check for crashes with same snake
 		self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos in new_posis if new_pos[0] in new_pos[1:]])
 		# Check for crashes with other snakes
-		self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos, other_pos in itertools.product(new_posis, new_posis) if new_pos != other_pos and new_pos[0] in other_pos])
-		self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos, other_pos in itertools.product(new_posis, remaining_posis) if new_pos[0] in other_pos])
+		self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos, other_pos in itertools.product(new_posis, new_posis + remaining_posis) if new_pos != other_pos and new_pos[0] in other_pos])
+		# self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos, other_pos in itertools.product(new_posis, remaining_posis) if new_pos[0] in other_pos])
 		# Update real snake positions if no crash happened
 		if not self.crashes:
 			for snake, new_pos in zip(snakes_to_upd, new_posis):
@@ -212,6 +221,7 @@ class Snake:
 		self.orientation = None
 		self.speed = 4
 		self.is_growing = 0
+		self.is_drunk = False
 
 	@property
 	def pos(self) -> [(int, int)]:
@@ -235,6 +245,17 @@ class Snake:
 	def grow(self, size: int):
 		"""Let the snake grow by the given size"""
 		self.is_growing += size
+
+	def adjust_speed(self, factor: float):
+		"""Adjust the speed of the snake by multiplying it with the given factor"""
+		self.speed = max(MIN_SNAKE_SPEED, min(int(factor * self.speed), MAX_SNAKE_SPEED))
+
+	def transpose_controls(self) -> None:
+		"""Transpose the controls for up<->down and left<->right"""
+		if not self.is_drunk:
+			tp = {ORIENT_UP: ORIENT_DOWN, ORIENT_LEFT: ORIENT_RIGHT, ORIENT_DOWN: ORIENT_UP, ORIENT_RIGHT: ORIENT_LEFT}
+			self.controls = {k: tp[v] for k, v in self.controls.items()}
+			self.is_drunk = True
 
 
 class Graphics:
