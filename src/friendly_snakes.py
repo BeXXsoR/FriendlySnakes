@@ -35,7 +35,7 @@ MAX_SNAKE_SPEED = 1000
 FPS = 60
 MAP_TO_SCREEN_RATIO = 0.9
 FILENAME_LEVEL_INFO = "../res/levels.json"
-FILENAME_SNAKE_PARTS = {GREEN: ["../res/snake_head_green.png", "../res/snake_body_straight_green.png", "../res/snake_body_corner_green.png"]}
+FILENAME_SNAKE_PARTS = {GREEN: ["../res/snake_head_green.png", "../res/snake_body_straight_green.png", "../res/snake_body_corner_green.png", "../res/snake_tail_green.png"]}
 FILENAME_ITEMS = {utils.Objects.APPLE: "../res/apple.png", utils.Objects.MELON: "../res/melon.png",
 				  utils.Objects.COFFEE: "../res/coffee.png", utils.Objects.TEA: "../res/tea.png", utils.Objects.BEER: "../res/beer.png"}
 GROWING_SIZES = {utils.Objects.APPLE: 1, utils.Objects.MELON: 3}
@@ -298,6 +298,10 @@ class Graphics:
 				if idx == 0 and snake.color in self.snake_parts:
 					# snake head
 					self.main_surface.blit(pygame.transform.rotate(self.snake_parts[snake.color][utils.SnakeParts.HEAD.value], ROTATIONS_STRAIGHT[snake.orientation]), screen_pos)
+				elif idx == len(snake.pos) - 1 and snake.color in self.snake_parts:
+					# snake tail
+					tail_orientation = utils.subtract_tuples_int(snake.pos[idx - 1], pos)
+					self.main_surface.blit(pygame.transform.rotate(self.snake_parts[snake.color][utils.SnakeParts.TAIL.value], ROTATIONS_STRAIGHT[tail_orientation]), screen_pos)
 				elif idx != len(snake.pos) - 1 and snake.color in self.snake_parts:
 					# snake body
 					orientation_front = utils.subtract_tuples_int(snake.pos[idx - 1], pos)
