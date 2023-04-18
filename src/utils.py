@@ -1,7 +1,14 @@
 """A helper module"""
 
 import itertools
-from enum import Flag, auto
+from enum import Enum, Flag, auto
+
+
+class SnakeParts(Enum):
+	HEAD = 0
+	BODY_STRAIGHT = 1
+	BODY_CORNER = 2
+	TAIL = 3
 
 
 class Objects(Flag):
@@ -44,7 +51,12 @@ def add_tuples(tuple_list: list[tuple[float, ...]]) -> tuple[float, ...]:
 
 def subtract_tuples(tuple1: tuple[float, ...], tuple2: tuple[float, ...]) -> tuple[float, ...]:
 	"""Subtract tuples itemwise"""
-	return tuple([a - b for a, b in itertools.zip_longest(tuple1, tuple2, fillvalue=0.0)])
+	return tuple([a - b for a, b in itertools.zip_longest(tuple1, tuple2, fillvalue=0)])
+
+
+def subtract_tuples_int(tuple1: tuple[float, ...], tuple2: tuple[float, ...]) -> tuple[int, ...]:
+	"""Subtract tuples itemwise and cast to int"""
+	return tuple([int(a - b) for a, b in itertools.zip_longest(tuple1, tuple2, fillvalue=0)])
 
 
 def multiply_tuple(tuple1: tuple[float, ...], scalar: float) -> tuple[float, ...]:
@@ -55,6 +67,11 @@ def multiply_tuple(tuple1: tuple[float, ...], scalar: float) -> tuple[float, ...
 def mult_tuple_to_int(tuple1: tuple[float, ...], scalar: float) -> tuple[int, ...]:
 	"""Multiply tuple with a scalar itemwise and cast the result to integer"""
 	return tuple([int(a * scalar) for a in tuple1])
+
+
+def tuple_to_int(tuple1: tuple[float, ...]) -> tuple[int, ...]:
+	"""Cast all elements of the tuple to int"""
+	return tuple([int(a) for a in tuple1])
 
 
 def get_tuple_signs(tuple1: tuple[float, ...]) -> tuple[int, ...]:

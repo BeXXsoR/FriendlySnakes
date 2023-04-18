@@ -24,12 +24,18 @@ ORIENT_UP = (-1, 0)
 ORIENT_DOWN = (1, 0)
 ORIENT_LEFT = (0, -1)
 ORIENT_RIGHT = (0, 1)
+ROTATIONS_STRAIGHT = {ORIENT_RIGHT: 0, ORIENT_UP: 90, ORIENT_LEFT: 180, ORIENT_DOWN: 270}
+ROTATIONS_CORNER = {(ORIENT_DOWN, ORIENT_LEFT): 90, (ORIENT_LEFT, ORIENT_DOWN): 270,
+					(ORIENT_DOWN, ORIENT_RIGHT): 0, (ORIENT_RIGHT, ORIENT_DOWN): 180,
+					(ORIENT_UP, ORIENT_LEFT): 180, (ORIENT_LEFT, ORIENT_UP): 0,
+					(ORIENT_UP, ORIENT_RIGHT): 270, (ORIENT_RIGHT, ORIENT_UP): 90}
 MIN_SNAKE_SIZE = 4
 MIN_SNAKE_SPEED = 1
 MAX_SNAKE_SPEED = 1000
 FPS = 60
 MAP_TO_SCREEN_RATIO = 0.9
 FILENAME_LEVEL_INFO = "../res/levels.json"
+FILENAME_SNAKE_PARTS = {GREEN: ["../res/snake_head_green.png", "../res/snake_body_straight_green.png", "../res/snake_body_corner_green.png"]}
 FILENAME_ITEMS = {utils.Objects.APPLE: "../res/apple.png", utils.Objects.MELON: "../res/melon.png",
 				  utils.Objects.COFFEE: "../res/coffee.png", utils.Objects.TEA: "../res/tea.png", utils.Objects.BEER: "../res/beer.png"}
 GROWING_SIZES = {utils.Objects.APPLE: 1, utils.Objects.MELON: 3}
@@ -266,9 +272,12 @@ class Graphics:
 		start_pos = utils.subtract_tuples(self.main_surface.get_rect().center,
 										  (self.square_size * num_cols / 2.0, self.square_size * num_rows / 2.0))
 		self.square_posis = [[(start_pos[0] + j * self.square_size, start_pos[1] + i * self.square_size) for j in range(num_cols)] for i in range(num_rows)]
-		self.imgs_orig = {obj: pygame.image.load(filename).convert_alpha() for obj, filename in FILENAME_ITEMS.items()}
-		self.imgs_scaled = {obj: pygame.transform.scale(img_orig, (self.square_size, self.square_size))
-							for obj, img_orig in self.imgs_orig.items()}
+		# Prepare images
+		self.items_orig = {obj: pygame.image.load(filename).convert_alpha() for obj, filename in FILENAME_ITEMS.items()}
+		self.items = {obj: pygame.transform.scale(img_orig, (self.square_size, self.square_size))
+					  for obj, img_orig in self.items_orig.items()}
+		self.snake_parts_orig = {k: [pygame.image.load(filename).convert_alpha() for filename in v] for k, v in FILENAME_SNAKE_PARTS.items()}
+		self.snake_parts = {k: [pygame.transform.scale(img_orig, (self.square_size, self.square_size)) for img_orig in v] for k, v in self.snake_parts_orig.items()}
 
 	def update_display(self, level: Level, snakes: [Snake], crashes: [((int, int), (int, int))]) -> None:
 		"""Draw everything onto the screen"""
@@ -277,15 +286,34 @@ class Graphics:
 		wall_color = GREY
 		for row, obj_row in enumerate(level.map):
 			for col, obj in enumerate(obj_row):
-				square_pos = self.grid_to_screen_pos((row, col))
+				screen_pos = self.grid_to_screen_pos((row, col))
 				if obj == utils.Objects.WALL:
-					pygame.draw.rect(self.main_surface, wall_color, pygame.rect.Rect(square_pos, (self.square_size, self.square_size)))
+					pygame.draw.rect(self.main_surface, wall_color, pygame.rect.Rect(screen_pos, (self.square_size, self.square_size)))
 				elif obj != utils.Objects.NONE:
-					self.main_surface.blit(self.imgs_scaled[obj], square_pos)
+					self.main_surface.blit(self.items[obj], screen_pos)
 		# Draw snakes
 		for snake in snakes:
-			for pos in snake.pos:
-				pygame.draw.rect(self.main_surface, snake.color, pygame.rect.Rect(self.grid_to_screen_pos(pos), (self.square_size, self.square_size)))
+			for idx, pos in enumerate(snake.pos):
+				screen_pos = self.grid_to_screen_pos(pos)
+				if idx == 0 and snake.color in self.snake_parts:
+					# snake head
+					self.main_surface.blit(pygame.transform.rotate(self.snake_parts[snake.color][utils.SnakeParts.HEAD.value], ROTATIONS_STRAIGHT[snake.orientation]), screen_pos)
+				elif idx != len(snake.pos) - 1 and snake.color in self.snake_parts:
+					# snake body
+					orientation_front = utils.subtract_tuples_int(snake.pos[idx - 1], pos)
+					orientation_back = utils.subtract_tuples_int(pos, snake.pos[idx + 1])
+					# snake_part_idx = utils.SnakeParts.BODY_STRAIGHT.value if orientation_front == orientation_back else utils.SnakeParts.BODY_CORNER.value
+					# rotation = ROTATIONS_STRAIGHT[orientation_front] if orientation_front == orientation_back else \
+					# ROTATIONS_CORNER[(orientation_front, orientation_back)]
+					if orientation_front == orientation_back:
+						snake_part_idx = utils.SnakeParts.BODY_STRAIGHT.value if orientation_front == orientation_back else utils.SnakeParts.BODY_CORNER.value
+						rotation = ROTATIONS_STRAIGHT[orientation_front] if orientation_front == orientation_back else ROTATIONS_CORNER[(orientation_front, orientation_back)]
+					else:
+						snake_part_idx = utils.SnakeParts.BODY_CORNER.value
+						rotation = ROTATIONS_CORNER[(orientation_front, orientation_back)]
+					self.main_surface.blit(pygame.transform.rotate(self.snake_parts[snake.color][snake_part_idx], rotation), screen_pos)
+				else:
+					pygame.draw.rect(self.main_surface, snake.color, pygame.rect.Rect(screen_pos, (self.square_size, self.square_size)))
 		# Draw crashes
 		radius1 = self.square_size / 2.0 * 0.7
 		radius2 = self.square_size / 2.0 * 0.8
