@@ -27,9 +27,9 @@
 			"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
 			"w, , , , ,m, , , , , , ,m,m,m,m,m,m, , , , , , ,w",
 			"w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w"],
-		"items": ["a", "m", "c", "t", "b"],
+		"item_rates": {"a": 6, "m": 2, "c": 2, "t": 2, "b": 1},
 		"trg_score": 100,
-		"profiles": []
+		"profiles": {}
 	},
 	{
 		"name": "Level 02",
@@ -59,8 +59,8 @@
 			"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
 			"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
 			"w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w"],	
-		"items": [],
+		"item_rates": {"a": 6, "m": 2, "c": 2, "t": 2, "b": 1},
 		"trg_score": 100,
-		"profiles": []
+		"profiles": {}
 	}
 ]
