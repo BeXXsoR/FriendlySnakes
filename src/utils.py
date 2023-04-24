@@ -11,6 +11,11 @@ class SnakeParts(Enum):
 	TAIL = 3
 
 
+class Cntble(Enum):
+	DROP_ITEM = 0
+	BOMB = 1
+
+
 class Objects(Flag):
 	NONE = auto()
 	WALL = auto()
