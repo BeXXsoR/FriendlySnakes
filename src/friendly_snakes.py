@@ -6,6 +6,7 @@ import sys
 import itertools
 import random
 import json
+import menu
 import pygame
 
 pygame.init()
@@ -70,10 +71,12 @@ class Communicator:
 			{pygame.K_w: ORIENT_UP, pygame.K_a: ORIENT_LEFT, pygame.K_s: ORIENT_DOWN, pygame.K_d: ORIENT_RIGHT},
 			{pygame.K_KP8: ORIENT_UP, pygame.K_KP4: ORIENT_LEFT, pygame.K_KP5: ORIENT_DOWN, pygame.K_KP6: ORIENT_RIGHT},
 			{pygame.K_i: ORIENT_UP, pygame.K_j: ORIENT_LEFT, pygame.K_k: ORIENT_DOWN, pygame.K_l: ORIENT_RIGHT}]
-		self.start_menu = None
+		self.main_surface = pygame.display.set_mode((0, 0))
 		self.levels = []
 		self.read_level_infos()
-		self.game = Game(player_names, player_colors, player_controls, self.levels[0])
+		self.start_menu = menu.StartMenu(self.main_surface)
+		self.start_menu.handle_events()
+		self.game = Game(player_names, player_colors, player_controls, self.levels[0], self.main_surface)
 		# self.game = Game(player_names[:1], player_colors[:1], player_controls[:1], self.levels[0])
 		# self.game = Game(player_names[:2], player_colors[:2], player_controls[:2], self.levels[0])
 
@@ -85,6 +88,7 @@ class Communicator:
 			self.levels.append(Level(level_info))
 
 	def start_game(self):
+
 		self.game.game_loop()
 
 
@@ -203,12 +207,12 @@ class Snake:
 
 class Game:
 	"""The main game class"""
-	def __init__(self, player_names: [str], player_colors: [(int, int, int)], player_controls: [{}], level):
+	def __init__(self, player_names: [str], player_colors: [(int, int, int)], player_controls: [{}], level, main_surface: pygame.Surface):
 		self.clock = pygame.time.Clock()
 		self.level = level
 		self.snakes = [Snake(name, idx, color, controls) for idx, (name, color, controls) in enumerate(zip(player_names, player_colors, player_controls))]
 		self.init_snake_pos()
-		self.graphics = Graphics(self.level.num_rows, self.level.num_cols)
+		self.graphics = Graphics(main_surface, self.level.num_rows, self.level.num_cols)
 		# crashes is a list of tuples of positions. For each crash that occurred, it holds the coordinates of the
 		# two squares between which the crash happened
 		self.crashes = []
@@ -348,8 +352,8 @@ class Game:
 
 class Graphics:
 	"""The class for displaying all graphics on the screen"""
-	def __init__(self, num_rows: int, num_cols: int):
-		self.main_surface = pygame.display.set_mode((0, 0))
+	def __init__(self, main_surface: pygame.Surface, num_rows: int, num_cols: int):
+		self.main_surface = main_surface
 		self.square_size = int(min(self.main_surface.get_width() * MAP_TO_SCREEN_RATIO / num_cols, self.main_surface.get_height() * MAP_TO_SCREEN_RATIO / num_rows))
 		map_size = (self.square_size * num_cols, self.square_size * num_rows)
 		# Field surface
