@@ -76,9 +76,9 @@ class Communicator:
 		self.read_level_infos()
 		self.start_menu = menu.StartMenu(self.main_surface)
 		self.start_menu.handle_events()
-		self.game = Game(player_names, player_colors, player_controls, self.levels[0], self.main_surface)
-		# self.game = Game(player_names[:1], player_colors[:1], player_controls[:1], self.levels[0])
-		# self.game = Game(player_names[:2], player_colors[:2], player_controls[:2], self.levels[0])
+		# self.game = Game(player_names, player_colors, player_controls, self.levels[0], self.main_surface)
+		self.game = Game(player_names[:1], player_colors[:1], player_controls[:1], self.levels[0], self.main_surface)
+		# self.game = Game(player_names[:2], player_colors[:2], player_controls[:2], self.levels[0], self.main_surface)
 
 	def read_level_infos(self) -> None:
 		"""Reads the level infos from the json file"""
@@ -88,7 +88,7 @@ class Communicator:
 			self.levels.append(Level(level_info))
 
 	def start_game(self):
-
+		# self.game.show_map()
 		self.game.game_loop()
 
 
@@ -349,6 +349,14 @@ class Game:
 			case _:
 				pass
 
+	def show_map(self):
+		is_running = True
+		while is_running:
+			for event in pygame.event.get():
+				if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+					is_running = False
+			self.graphics.display_map(self.level)
+
 
 class Graphics:
 	"""The class for displaying all graphics on the screen"""
@@ -475,6 +483,17 @@ class Graphics:
 		"""Translates coordinates in the grid to the screen position of the topleft corner of the corresponding rect"""
 		return self.square_posis[grid_pos[0]][grid_pos[1]]
 
+	def display_map(self, level: Level):
+		self.main_surface.fill(BG_COLOR)
+		# Draw level
+		wall_color = GREY
+		for row, obj_row in enumerate(level.map):
+			for col, obj in enumerate(obj_row):
+				screen_pos = self.grid_to_screen_pos((row, col))
+				if obj == utils.Objects.WALL:
+					pygame.draw.rect(self.map_surface, wall_color,
+									 pygame.rect.Rect(screen_pos, (self.square_size, self.square_size)))
+		pygame.display.update()
 
 # ----- Main script ----
 if __name__ == "__main__":
