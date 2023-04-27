@@ -17,6 +17,7 @@ CYAN = (51, 255, 255)
 ORANGE = (255, 128, 0)
 GREY = (192, 192, 192)
 BLACK = (0, 0, 0)
+BLACK_TP = (0, 0, 0, 0)
 BG_COLOR = GREEN
 FILENAMES_SNAKE = {GREEN: "../res/menu_snake_green.png", BLUE: "../res/menu_snake_blue.png",
 				   CYAN: "../res/menu_snake_cyan.png", PINK: "../res/menu_snake_pink.png"}
@@ -24,6 +25,8 @@ FILENAME_BUTTON = "../res/button.png"
 FILENAME_KEY_BG = "../res/key_bg.png"
 FILENAME_ROOT_LVL_PREV = "../res/level_prev_{}.png"
 FILENAME_BG = "../res/menu_bg.png"
+FILENAME_TITLE_THEME = "../res/title_theme.ogg"
+FADE_MS = 3000
 FPS = 60
 MAP_TO_SCREEN_RATIO = 0.9
 TITLE_FONT_SIZE = 200
@@ -70,19 +73,21 @@ class ClickableGroup(pygame.sprite.Group):
 class StartMenu:
 	def __init__(self, main_surface: pygame.Surface):
 		"""Initialize the start menu"""
-		self.main_surface = main_surface
+		self.menu_surface = main_surface
+		# self.menu_surface = main_surface.subsurface(main_surface.get_rect())
+		# self.menu_surface = pygame.Surface((0, 0), flags=pygame.SRCALPHA)
 		self.snake_names = ["Kokosnuss", "Tiger", "Muh", "Mausi"]
 		self.snake_colors = [GREEN, BLUE, CYAN, PINK]
 		self.snake_controls = [["↑", "←", "↓", "→"], ["W", "A", "S", "D"], ["8", "4", "5", "6"], ["I", "J", "K", "L"]]
 
 		self.level = 0
-		usable_rect = pygame.rect.Rect(int((1 - MAP_TO_SCREEN_RATIO) * self.main_surface.get_width() / 2),
-									   int((1 - MAP_TO_SCREEN_RATIO) * self.main_surface.get_height() / 2),
-									   MAP_TO_SCREEN_RATIO * self.main_surface.get_width(),
-									   MAP_TO_SCREEN_RATIO * self.main_surface.get_height())
+		usable_rect = pygame.rect.Rect(int((1 - MAP_TO_SCREEN_RATIO) * self.menu_surface.get_width() / 2),
+									   int((1 - MAP_TO_SCREEN_RATIO) * self.menu_surface.get_height() / 2),
+									   MAP_TO_SCREEN_RATIO * self.menu_surface.get_width(),
+									   MAP_TO_SCREEN_RATIO * self.menu_surface.get_height())
 		self.scaling_factor = main_surface.get_height() / BENCHMARK_HEIGHT
 		# Background
-		self.bg_img = pygame.transform.scale(pygame.image.load(FILENAME_BG).convert_alpha(), self.main_surface.get_size())
+		self.bg_img = pygame.transform.scale(pygame.image.load(FILENAME_BG).convert_alpha(), self.menu_surface.get_size())
 		# Title
 		self.title_font = pygame.font.Font(None, int(TITLE_FONT_SIZE * self.scaling_factor))
 		self.title_rendered = self.title_font.render("Friendly Snakes", True, BLUE)
@@ -96,7 +101,7 @@ class StartMenu:
 		## rects
 		area_w, area_h = int(usable_rect.w / 4), int(SNAKE_SETTINGS_HEIGHT * usable_rect.h)
 		self.snake_settings_rects = [pygame.rect.Rect(usable_rect.left + int(i / 4 * usable_rect.w), self.free_space_rect.bottom, area_w, area_h) for i in range(4)]
-		self.snake_settings_surfs = [self.main_surface.subsurface(rect) for rect in self.snake_settings_rects]
+		self.snake_settings_surfs = [self.menu_surface.subsurface(rect) for rect in self.snake_settings_rects]
 		## inner rects
 		BORDER_DIST = 0.1
 		self.snake_name_rect = pygame.rect.Rect(BORDER_DIST * area_w, 0, (1 - 2 * BORDER_DIST) * area_w, SNAKE_NAME_HEIGHT * area_h)
@@ -129,18 +134,39 @@ class StartMenu:
 		# self.level_previews = [pygame.transform.scale(pygame.image.load(FILENAME_ROOT_LVL_PREV.format(str(i))).convert_alpha(), ) for i in range(1)]
 		# rest
 		self.clock = pygame.time.Clock()
+		pygame.mixer_music.load(FILENAME_TITLE_THEME)
+		pygame.mixer_music.play()
 		self.update_display()
 
 	def handle_events(self):
 		"""Handle the events in the start menu"""
+		global BLACK_TP
 		is_running = True
 		while is_running:
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
 					# Quit
 					is_running = False
+				if event.type == pygame.KEYDOWN and event.key == pygame.K_y:
+					self.bg_img.fill((100, 100, 100, 0), special_flags=pygame.BLEND_RGBA_SUB)
 			self.clock.tick(FPS)
 			self.update_display()
+		# Fade out
+		pygame.mixer_music.fadeout(FADE_MS)
+		color_fade_steps = 10
+		fade_cnt = 0
+		# import time
+		fading_fps = 255 / color_fade_steps * 1000 / FADE_MS
+		# start = time.perf_counter()
+		while fade_cnt * color_fade_steps <= 255:
+			self.bg_img.fill((color_fade_steps, color_fade_steps, color_fade_steps, 0), special_flags=pygame.BLEND_RGBA_ADD)
+			self.menu_surface.blit(self.bg_img, (0, 0))
+			self.clock.tick(fading_fps)
+			pygame.display.update()
+			fade_cnt += 1
+		# end = time.perf_counter()
+		# diff = end - start
+		# print("Time: " + str(diff))
 
 	def click_on_name_button(self):
 		pass
@@ -150,7 +176,7 @@ class StartMenu:
 
 	def update_display(self) -> None:
 		"""Display the current state on the screen"""
-		self.main_surface.blit(self.bg_img, (0, 0))
+		self.menu_surface.blit(self.bg_img, (0, 0))
 		# self.main_surface.blit(self.title_rendered, self.title_rendered.get_rect(center=self.title_rect.center))
 		# # Draw button style backgrounds for the snake settings elements
 		# for surf in self.snake_settings_surfs:

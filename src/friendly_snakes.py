@@ -48,8 +48,10 @@ FILENAME_SNAKE_PARTS = {GREEN: ["../res/snake_head_green.png", "../res/snake_bod
 FILENAME_ITEMS = {utils.Objects.APPLE: "../res/apple.png", utils.Objects.MELON: "../res/melon.png",
 				  utils.Objects.COFFEE: "../res/coffee.png", utils.Objects.TEA: "../res/tea.png", utils.Objects.BEER: "../res/beer.png"}
 FILENAME_SPEEDO = "../res/speedo.png"
-FILENAME_SOUNDS = {utils.Objects.APPLE: "../res/eat.ogg", utils.Objects.MELON: "../res/eat.ogg",
-				   utils.Objects.COFFEE: "../res/slurp.ogg", utils.Objects.TEA: "../res/slurp.ogg", utils.Objects.BEER: "../res/burp.ogg"}
+FILENAME_ITEM_SOUNDS = {utils.Objects.APPLE: "../res/eat.ogg", utils.Objects.MELON: "../res/eat.ogg",
+						utils.Objects.COFFEE: "../res/slurp.ogg", utils.Objects.TEA: "../res/slurp.ogg", utils.Objects.BEER: "../res/burp.ogg"}
+FILENAME_CRASH_SOUND = "../res/crash.ogg"
+FILENAME_TITLE_THEME = "../res/title_theme.ogg"
 GROWING_SIZES = {utils.Objects.APPLE: 1, utils.Objects.MELON: 3}
 SPEEDING_FACTORS = {utils.Objects.COFFEE: 2, utils.Objects.TEA: 0.5}
 UPDATE_SNAKES = [pygame.event.custom_type() for _ in range(4)]
@@ -74,8 +76,12 @@ class Communicator:
 		self.main_surface = pygame.display.set_mode((0, 0))
 		self.levels = []
 		self.read_level_infos()
+		# pygame.mixer_music.load(FILENAME_TITLE_THEME)
+		# pygame.mixer_music.play(fade_ms=2000)
 		self.start_menu = menu.StartMenu(self.main_surface)
 		self.start_menu.handle_events()
+		# pygame.mixer_music.fadeout(2000)
+		# pygame.time.delay(2000)
 		# self.game = Game(player_names, player_colors, player_controls, self.levels[0], self.main_surface)
 		self.game = Game(player_names[:1], player_colors[:1], player_controls[:1], self.levels[0], self.main_surface)
 		# self.game = Game(player_names[:2], player_colors[:2], player_controls[:2], self.levels[0], self.main_surface)
@@ -218,7 +224,8 @@ class Game:
 		self.crashes = []
 		self.free_squares = set([(i, j) for i, row in enumerate(level.map) for j, obj in enumerate(row) if obj == utils.Objects.NONE]) - set([pos for snake in self.snakes for pos in snake.pos])
 		self.upd_snake_events = [pygame.event.Event(event_id, {"snake_idx": idx}) for idx, event_id in enumerate(UPDATE_SNAKES[:len(self.snakes)])]
-		self.item_sounds = {k: pygame.mixer.Sound(v) for k, v in FILENAME_SOUNDS.items()}
+		self.item_sounds = {k: pygame.mixer.Sound(v) for k, v in FILENAME_ITEM_SOUNDS.items()}
+		self.crash_sound = pygame.mixer.Sound(FILENAME_CRASH_SOUND)
 		# counters is a dict tracking the game elements that needs to be updated every second. Its keys are tuples of
 		# type (utils.Cntable, int), where the former shows the kind of element and the latter the additional index
 		# corresponding to that kind of element (e.g. (utils.Cntable.BOMB, 0) would refer to bomb #0 in the bombs list.
@@ -235,6 +242,7 @@ class Game:
 		"""Main game loop"""
 		self.graphics.update_display(self.level, self.snakes, self.crashes)
 		is_running = True
+		crashed = False
 		# Initialize timer
 		for snake in self.snakes:
 			pygame.time.set_timer(self.upd_snake_events[snake.idx], int(1000 / snake.speed))
@@ -248,7 +256,7 @@ class Game:
 				if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
 					# Quit
 					is_running = False
-				elif event.type == pygame.KEYDOWN:
+				elif event.type == pygame.KEYDOWN and not crashed:
 					# Try updating orientation of snake
 					for snake in self.snakes:
 						if snake.update_orientation(event.key):
@@ -256,10 +264,10 @@ class Game:
 					else:
 						# Check for other keys
 						pass
-				elif event.type in UPDATE_SNAKES:
+				elif event.type in UPDATE_SNAKES and not crashed:
 					# Update position of snake
 					snakes_to_update.append(self.snakes[event.snake_idx])
-				elif event.type == ONE_SEC_TIMER:
+				elif event.type == ONE_SEC_TIMER and not crashed:
 					# update all counting game elements
 					self.update_counting()
 					for snake in self.snakes:
@@ -273,6 +281,9 @@ class Game:
 				self.graphics.update_display(self.level, self.snakes, self.crashes)
 				for snake in snakes_to_update:
 					pygame.time.set_timer(self.upd_snake_events[snake.idx], int(1000 / snake.speed))
+			if self.crashes and not crashed:
+				self.crash_sound.play()
+				crashed = True
 			self.clock.tick(FPS)
 
 	def update_snakes(self, snakes_to_upd: []) -> [utils.Objects]:
