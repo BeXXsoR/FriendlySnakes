@@ -26,7 +26,7 @@ FILENAME_KEY_BG = "../res/key_bg.png"
 FILENAME_ROOT_LVL_PREV = "../res/level_prev_{}.png"
 FILENAME_BG = "../res/menu_bg.png"
 FILENAME_TITLE_THEME = "../res/title_theme.ogg"
-FADE_MS = 3000
+FADE_MS = 1
 FPS = 60
 MAP_TO_SCREEN_RATIO = 0.9
 TITLE_FONT_SIZE = 200
@@ -152,18 +152,18 @@ class StartMenu:
 			self.clock.tick(FPS)
 			self.update_display()
 		# Fade out
-		pygame.mixer_music.fadeout(FADE_MS)
-		color_fade_steps = 10
-		fade_cnt = 0
-		# import time
-		fading_fps = 255 / color_fade_steps * 1000 / FADE_MS
-		# start = time.perf_counter()
-		while fade_cnt * color_fade_steps <= 255:
-			self.bg_img.fill((color_fade_steps, color_fade_steps, color_fade_steps, 0), special_flags=pygame.BLEND_RGBA_ADD)
-			self.menu_surface.blit(self.bg_img, (0, 0))
-			self.clock.tick(fading_fps)
-			pygame.display.update()
-			fade_cnt += 1
+		# pygame.mixer_music.fadeout(FADE_MS)
+		# color_fade_steps = 10
+		# fade_cnt = 0
+		# # import time
+		# fading_fps = 255 / color_fade_steps * 1000 / FADE_MS
+		# # start = time.perf_counter()
+		# while fade_cnt * color_fade_steps <= 255:
+		# 	self.bg_img.fill((color_fade_steps, color_fade_steps, color_fade_steps, 0), special_flags=pygame.BLEND_RGBA_ADD)
+		# 	self.menu_surface.blit(self.bg_img, (0, 0))
+		# 	self.clock.tick(fading_fps)
+		# 	pygame.display.update()
+		# 	fade_cnt += 1
 		# end = time.perf_counter()
 		# diff = end - start
 		# print("Time: " + str(diff))

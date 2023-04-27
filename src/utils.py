@@ -24,12 +24,13 @@ class Objects(Flag):
 	COFFEE = auto()
 	TEA = auto()
 	BEER = auto()
+	BOMB = auto()
 
 
 Eatable = Objects.APPLE | Objects.MELON | Objects.COFFEE | Objects.TEA | Objects.BEER
 Growing = Objects.APPLE | Objects.MELON
 Speeding = Objects.COFFEE | Objects.TEA
-Complex = Objects.BEER
+Complex = Objects.BEER | Objects.BOMB
 
 
 def string_to_object(string: str) -> Objects:
@@ -41,6 +42,7 @@ def string_to_object(string: str) -> Objects:
 		case "c": return Objects.COFFEE
 		case "t": return Objects.TEA
 		case "b": return Objects.BEER
+		case "o": return Objects.BOMB
 		case _: return Objects.NONE
 
 

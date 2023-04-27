@@ -7,6 +7,7 @@ import itertools
 import random
 import json
 import menu
+import animations
 import pygame
 
 pygame.init()
@@ -39,6 +40,7 @@ MAX_SNAKE_SPEED = 1000
 FPS = 60
 MAP_TO_SCREEN_RATIO = 0.9
 DROP_ITEM_SPEED = 5
+BOMB_COUNTDOWN = 9
 DRUNK_DURATION = 10
 FILENAME_LEVEL_INFO = "../res/levels.json"
 FILENAME_SNAKE_PARTS = {GREEN: ["../res/snake_head_green.png", "../res/snake_body_straight_green.png", "../res/snake_body_corner_green.png", "../res/snake_tail_green.png"],
@@ -47,6 +49,8 @@ FILENAME_SNAKE_PARTS = {GREEN: ["../res/snake_head_green.png", "../res/snake_bod
 						PINK: ["../res/snake_head_pink.png", "../res/snake_body_straight_pink.png", "../res/snake_body_corner_pink.png", "../res/snake_tail_pink.png"]}
 FILENAME_ITEMS = {utils.Objects.APPLE: "../res/apple.png", utils.Objects.MELON: "../res/melon.png",
 				  utils.Objects.COFFEE: "../res/coffee.png", utils.Objects.TEA: "../res/tea.png", utils.Objects.BEER: "../res/beer.png"}
+FILENAME_BOMB =  "../res/bomb.gif"
+FILENAME_EXPLOSION = "../res/explosion.gif"
 FILENAME_SPEEDO = "../res/speedo.png"
 FILENAME_ITEM_SOUNDS = {utils.Objects.APPLE: "../res/eat.ogg", utils.Objects.MELON: "../res/eat.ogg",
 						utils.Objects.COFFEE: "../res/slurp.ogg", utils.Objects.TEA: "../res/slurp.ogg", utils.Objects.BEER: "../res/burp.ogg"}
@@ -55,7 +59,9 @@ FILENAME_TITLE_THEME = "../res/title_theme.ogg"
 GROWING_SIZES = {utils.Objects.APPLE: 1, utils.Objects.MELON: 3}
 SPEEDING_FACTORS = {utils.Objects.COFFEE: 2, utils.Objects.TEA: 0.5}
 UPDATE_SNAKES = [pygame.event.custom_type() for _ in range(4)]
-ONE_SEC_TIMER = pygame.event.custom_type()
+REOCC_TIMER = pygame.event.custom_type()
+REOCC_DUR = 250
+REOCC_PER_SEC = int(1000 / REOCC_DUR)
 SNAKE_NAME_FONT_SIZE = 40
 SNAKE_INFO_FONT_SIZE = 40
 # DROP_ITEM = pygame.event.custom_type()
@@ -197,7 +203,7 @@ class Snake:
 		"""Handle the snake getting drunk"""
 		if not self.is_drunk:
 			self.transpose_controls()
-		self.is_drunk = max(self.is_drunk, DRUNK_DURATION)
+		self.is_drunk = max(self.is_drunk, DRUNK_DURATION * REOCC_PER_SEC)
 			
 	def get_sober(self) -> None:
 		"""Handle the snake getting sober"""
@@ -224,14 +230,17 @@ class Game:
 		self.crashes = []
 		self.free_squares = set([(i, j) for i, row in enumerate(level.map) for j, obj in enumerate(row) if obj == utils.Objects.NONE]) - set([pos for snake in self.snakes for pos in snake.pos])
 		self.upd_snake_events = [pygame.event.Event(event_id, {"snake_idx": idx}) for idx, event_id in enumerate(UPDATE_SNAKES[:len(self.snakes)])]
+		self.reocc_event = pygame.event.Event(REOCC_TIMER, {"duration": REOCC_DUR})
+		self.passed_reoccs = 0
 		self.item_sounds = {k: pygame.mixer.Sound(v) for k, v in FILENAME_ITEM_SOUNDS.items()}
 		self.crash_sound = pygame.mixer.Sound(FILENAME_CRASH_SOUND)
 		# counters is a dict tracking the game elements that needs to be updated every second. Its keys are tuples of
 		# type (utils.Cntable, int), where the former shows the kind of element and the latter the additional index
 		# corresponding to that kind of element (e.g. (utils.Cntable.BOMB, 0) would refer to bomb #0 in the bombs list.
 		# If no additional index is needed, None is used for the latter.
-		# The values of the dict are ints showing the countdown for the specific element.
-		self.counters = {(utils.Cntble.DROP_ITEM, None): DROP_ITEM_SPEED}
+		# The values of the dict are ints showing the countdown for the specific element w.r.t. to REOCC_DUR.
+		self.counters = {(utils.Cntble.DROP_ITEM, None): DROP_ITEM_SPEED * REOCC_PER_SEC}
+		self.bombs = []
 
 	def init_snake_pos(self) -> None:
 		"""Initialize the positions of the snakes"""
@@ -240,16 +249,15 @@ class Game:
 
 	def game_loop(self) -> None:
 		"""Main game loop"""
-		self.graphics.update_display(self.level, self.snakes, self.crashes)
-		is_running = True
-		crashed = False
 		# Initialize timer
 		for snake in self.snakes:
 			pygame.time.set_timer(self.upd_snake_events[snake.idx], int(1000 / snake.speed))
 		# pygame.time.set_timer(DROP_ITEM, DROP_ITEM_SPEED)
-		pygame.time.set_timer(ONE_SEC_TIMER, 1000)
+		pygame.time.set_timer(self.reocc_event, REOCC_DUR)
+		self.graphics.update_display(self.level, self.snakes, self.crashes, self.create_bomb_dict())
 		# start game loop
-		self.graphics.update_display(self.level, self.snakes, self.crashes)
+		is_running = True
+		crashed = False
 		while is_running:
 			snakes_to_update = []
 			for event in pygame.event.get():
@@ -267,24 +275,27 @@ class Game:
 				elif event.type in UPDATE_SNAKES and not crashed:
 					# Update position of snake
 					snakes_to_update.append(self.snakes[event.snake_idx])
-				elif event.type == ONE_SEC_TIMER and not crashed:
+				elif event.type == REOCC_TIMER and not crashed:
 					# update all counting game elements
+					print()
+					print(self.counters)
+					print(self.bombs)
 					self.update_counting()
 					for snake in self.snakes:
 						snake.update_counting()
-			# Update display
-			if snakes_to_update:
-				for item in self.update_snakes(snakes_to_update):
-					# Play sounds
-					if item in self.item_sounds:
-						self.item_sounds[item].play()
-				self.graphics.update_display(self.level, self.snakes, self.crashes)
-				for snake in snakes_to_update:
-					pygame.time.set_timer(self.upd_snake_events[snake.idx], int(1000 / snake.speed))
-			if self.crashes and not crashed:
-				self.crash_sound.play()
-				crashed = True
-			self.clock.tick(FPS)
+				# Update display
+				if snakes_to_update:
+					for item in self.update_snakes(snakes_to_update):
+						# Play sounds
+						if item in self.item_sounds:
+							self.item_sounds[item].play()
+					for snake in snakes_to_update:
+						pygame.time.set_timer(self.upd_snake_events[snake.idx], int(1000 / snake.speed))
+				self.graphics.update_display(self.level, self.snakes, self.crashes, self.create_bomb_dict())
+				if self.crashes and not crashed:
+					self.crash_sound.play()
+					crashed = True
+				self.clock.tick(FPS)
 
 	def update_snakes(self, snakes_to_upd: []) -> [utils.Objects]:
 		"""Update the position of the snakes. Returns a list of objects that have been eaten"""
@@ -328,6 +339,7 @@ class Game:
 	def update_counting(self):
 		""""Update all counting game elements"""
 		elem_to_delete = []
+		elem_to_add = {}
 		for k, v in self.counters.items():
 			elem, idx = k
 			if v == 1:
@@ -336,10 +348,16 @@ class Game:
 					case utils.Cntble.DROP_ITEM:
 						# drop a new item on the map
 						i, j = random.choice(list(self.free_squares))
-						self.level.map[i][j] = random.choice(self.level.items)
+						new_object = random.choice(self.level.items)
+						self.level.map[i][j] = new_object
 						self.free_squares -= {(i, j)}
-						self.counters[k] = DROP_ITEM_SPEED
+						self.counters[k] = DROP_ITEM_SPEED * REOCC_PER_SEC
+						if new_object == utils.Objects.BOMB:
+							elem_to_add[(utils.Cntble.BOMB, len(self.bombs))] = int(BOMB_COUNTDOWN * REOCC_PER_SEC)
+							self.bombs.append((i, j))
 					case utils.Cntble.BOMB:
+						self.handle_explosion(idx)
+						elem_to_delete.append(k)
 						pass
 					case _:
 						pass
@@ -347,18 +365,30 @@ class Game:
 				self.counters[k] -= 1
 		for k in elem_to_delete:
 			del self.counters[k]
+		for k, v in elem_to_add.items():
+			self.counters[k] = v
 
-	def countdown_expired(self, elem: utils.Cntble):
-		match elem:
-			case utils.Cntble.DROP_ITEM:
-				# drop a new item on the map
-				i, j = random.choice(list(self.free_squares))
-				self.level.map[i][j] = random.choice(self.level.items)
-				self.free_squares -= {(i, j)}
-			case utils.Cntble.BOMB:
-				pass
-			case _:
-				pass
+	def handle_explosion(self, bomb_idx: int):
+		# TODO: Implement explosion handling
+		row, col = self.bombs.pop(bomb_idx)
+		self.level.map[row][col] = utils.Objects.NONE
+		self.free_squares |= {(row, col)}
+		return
+
+	def create_bomb_dict(self) -> {(int, int): int}:
+		return {loc: self.counters[(utils.Cntble.BOMB, idx)] for idx, loc in enumerate(self.bombs)}
+
+	# def countdown_expired(self, elem: utils.Cntble):
+	# 	match elem:
+	# 		case utils.Cntble.DROP_ITEM:
+	# 			# drop a new item on the map
+	# 			i, j = random.choice(list(self.free_squares))
+	# 			self.level.map[i][j] = random.choice(self.level.items)
+	# 			self.free_squares -= {(i, j)}
+	# 		case utils.Cntble.BOMB:
+	# 			pass
+	# 		case _:
+	# 			pass
 
 	def show_map(self):
 		is_running = True
@@ -373,13 +403,14 @@ class Graphics:
 	"""The class for displaying all graphics on the screen"""
 	def __init__(self, main_surface: pygame.Surface, num_rows: int, num_cols: int):
 		self.main_surface = main_surface
-		self.square_size = int(min(self.main_surface.get_width() * MAP_TO_SCREEN_RATIO / num_cols, self.main_surface.get_height() * MAP_TO_SCREEN_RATIO / num_rows))
-		map_size = (self.square_size * num_cols, self.square_size * num_rows)
+		self.edge_size = int(min(self.main_surface.get_width() * MAP_TO_SCREEN_RATIO / num_cols, self.main_surface.get_height() * MAP_TO_SCREEN_RATIO / num_rows))
+		self.square_size = (self.edge_size, self.edge_size)
+		map_size = (self.edge_size * num_cols, self.edge_size * num_rows)
 		# Field surface
 		self.map_rect = pygame.rect.Rect((0, 0), map_size)
 		self.map_rect.center = self.main_surface.get_rect().center
 		self.map_surface = self.main_surface.subsurface(self.map_rect)
-		self.square_posis = [[(j * self.square_size, i * self.square_size) for j in range(num_cols)] for i in range(num_rows)]
+		self.square_posis = [[(j * self.edge_size, i * self.edge_size) for j in range(num_cols)] for i in range(num_rows)]
 		# snake status surfaces
 		status_rect_size = (int((MAP_TO_SCREEN_RATIO * self.main_surface.get_width() - self.map_rect.width) / 2), int(self.map_rect.height / 4))
 		status_rect = pygame.rect.Rect((0, 0), status_rect_size)
@@ -407,10 +438,13 @@ class Graphics:
 		self.snake_burger_rects = [pygame.rect.Rect((i * edge_size, self.snake_drunk_rect.bottom), rect_size) for i in range(3)]
 		# Prepare images
 		self.items_orig = {obj: pygame.image.load(filename).convert_alpha() for obj, filename in FILENAME_ITEMS.items()}
-		self.items = {obj: pygame.transform.scale(img_orig, (self.square_size, self.square_size))
+		self.items = {obj: pygame.transform.scale(img_orig, self.square_size)
 					  for obj, img_orig in self.items_orig.items()}
+		self.bomb_anim = animations.Animation(FILENAME_BOMB, self.square_size)
+		self.explosion_anim = animations.Animation(FILENAME_EXPLOSION, (3 * self.edge_size, 3 * self.edge_size))
+		self.explosions = {}
 		self.snake_parts_orig = {k: [pygame.image.load(filename).convert_alpha() for filename in v] for k, v in FILENAME_SNAKE_PARTS.items()}
-		self.snake_parts = {k: [pygame.transform.scale(img_orig, (self.square_size, self.square_size)) for img_orig in v] for k, v in self.snake_parts_orig.items()}
+		self.snake_parts = {k: [pygame.transform.scale(img_orig, self.square_size) for img_orig in v] for k, v in self.snake_parts_orig.items()}
 		status_img_size = utils.mult_tuple_to_int(rect_size, 1)
 		self.snake_status_imgs = {k: [pygame.transform.scale(img_orig, status_img_size) for img_orig in v] for k, v in self.snake_parts_orig.items() if k != utils.SnakeParts.TAIL}
 		self.speedo_img = pygame.transform.scale(pygame.image.load(FILENAME_SPEEDO).convert_alpha(), utils.mult_tuple_to_int(rect_size, 0.8))
@@ -419,7 +453,7 @@ class Graphics:
 		self.snake_name_font = pygame.font.Font(None, SNAKE_NAME_FONT_SIZE)
 		self.snake_info_font = pygame.font.Font(None, SNAKE_INFO_FONT_SIZE)
 
-	def update_display(self, level: Level, snakes: [Snake], crashes: [((int, int), (int, int))]) -> None:
+	def update_display(self, level: Level, snakes: [Snake], crashes: [((int, int), (int, int))], bombs: {(int, int): int}) -> None:
 		"""Draw everything onto the screen"""
 		self.main_surface.fill(BG_COLOR)
 		# Draw level
@@ -428,16 +462,29 @@ class Graphics:
 			for col, obj in enumerate(obj_row):
 				screen_pos = self.grid_to_screen_pos((row, col))
 				if obj == utils.Objects.WALL:
-					pygame.draw.rect(self.map_surface, wall_color, pygame.rect.Rect(screen_pos, (self.square_size, self.square_size)))
+					pygame.draw.rect(self.map_surface, wall_color, pygame.rect.Rect(screen_pos, self.square_size))
+				elif obj == utils.Objects.BOMB:
+					cur_frame_id = self.bomb_anim.num_frames - bombs[(row, col)]
+					cur_frame = self.bomb_anim.pygame_frames[cur_frame_id]
+					self.map_surface.blit(cur_frame, screen_pos)
+					if bombs[(row, col)] == 1:
+						self.explosions[screen_pos] = -1
 				elif obj != utils.Objects.NONE:
 					self.map_surface.blit(self.items[obj], screen_pos)
+		# Draw explosions
+		for screen_pos, frame_id in self.explosions.items():
+			if frame_id >= 0:
+				self.map_surface.blit(self.explosion_anim.pygame_frames[frame_id], utils.subtract_tuples(screen_pos, self.square_size))
+			self.explosions[screen_pos] += 1
+		self.explosions = {k: v for k, v in self.explosions.items() if v < self.explosion_anim.num_frames}
 		# Draw snakes
 		for snake in snakes:
 			for idx, pos in enumerate(snake.pos):
 				screen_pos = self.grid_to_screen_pos(pos)
 				if idx == 0 and snake.color in self.snake_parts:
 					# snake head
-					self.map_surface.blit(pygame.transform.rotate(self.snake_parts[snake.color][utils.SnakeParts.HEAD.value], ROTATIONS_STRAIGHT[snake.orientation]), screen_pos)
+					head_orientation = utils.subtract_tuples(pos, snake.pos[1])
+					self.map_surface.blit(pygame.transform.rotate(self.snake_parts[snake.color][utils.SnakeParts.HEAD.value], ROTATIONS_STRAIGHT[head_orientation]), screen_pos)
 				elif idx == len(snake.pos) - 1 and snake.color in self.snake_parts:
 					# snake tail
 					tail_orientation = utils.subtract_tuples_int(snake.pos[idx - 1], pos)
@@ -457,11 +504,11 @@ class Graphics:
 						rotation = ROTATIONS_CORNER[(orientation_front, orientation_back)]
 					self.map_surface.blit(pygame.transform.rotate(self.snake_parts[snake.color][snake_part_idx], rotation), screen_pos)
 				else:
-					pygame.draw.rect(self.map_surface, snake.color, pygame.rect.Rect(screen_pos, (self.square_size, self.square_size)))
+					pygame.draw.rect(self.map_surface, snake.color, pygame.rect.Rect(screen_pos, self.square_size))
 		# Draw crashes
-		radius1 = self.square_size / 2.0 * 0.7
-		radius2 = self.square_size / 2.0 * 0.8
-		crashes_centers = tuple([utils.multiply_tuple(utils.add_tuples([self.grid_to_screen_pos(crash[0]), self.grid_to_screen_pos(crash[1]), (self.square_size, self.square_size)]), 0.5) for crash in crashes])
+		radius1 = self.edge_size / 2.0 * 0.7
+		radius2 = self.edge_size / 2.0 * 0.8
+		crashes_centers = tuple([utils.multiply_tuple(utils.add_tuples([self.grid_to_screen_pos(crash[0]), self.grid_to_screen_pos(crash[1]), self.square_size]), 0.5) for crash in crashes])
 		for center in crashes_centers:
 			pygame.draw.circle(self.map_surface, ORANGE, center, radius2)
 			pygame.draw.circle(self.map_surface, RED, center, radius1)
@@ -483,7 +530,7 @@ class Graphics:
 			surf.blit(speed_font, speed_font.get_rect(center=self.snake_speed_rect.center))
 			if snake.is_drunk:
 				surf.blit(self.drunk_img, self.drunk_img.get_rect(center=self.snake_drunk_rect.center))
-				drunk_font = self.snake_info_font.render(str(snake.is_drunk), True, BLACK if snake.is_drunk > 3 else RED)
+				drunk_font = self.snake_info_font.render(str(int(snake.is_drunk / REOCC_PER_SEC)), True, BLACK if snake.is_drunk > 3 else RED)
 				surf.blit(drunk_font, drunk_font.get_rect(center=self.snake_drunk_rect.center))
 			# for rect in to_be_added_rects:
 				# pygame.draw.rect(surf, (random.randrange(255), random.randrange(255), random.randrange(255)), rect)
@@ -503,7 +550,7 @@ class Graphics:
 				screen_pos = self.grid_to_screen_pos((row, col))
 				if obj == utils.Objects.WALL:
 					pygame.draw.rect(self.map_surface, wall_color,
-									 pygame.rect.Rect(screen_pos, (self.square_size, self.square_size)))
+									 pygame.rect.Rect(screen_pos, self.square_size))
 		pygame.display.update()
 
 # ----- Main script ----
