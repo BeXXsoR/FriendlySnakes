@@ -40,7 +40,8 @@ MAX_SNAKE_SPEED = 1000
 FPS = 60
 MAP_TO_SCREEN_RATIO = 0.9
 DROP_ITEM_SPEED = 5
-BOMB_COUNTDOWN = 9
+BOMB_CNTDWN = 9
+EXPLOSION_CNTDWN = 2
 DRUNK_DURATION = 10
 FILENAME_LEVEL_INFO = "../res/levels.json"
 FILENAME_SNAKE_PARTS = {GREEN: ["../res/snake_head_green.png", "../res/snake_body_straight_green.png", "../res/snake_body_corner_green.png", "../res/snake_tail_green.png"],
@@ -227,7 +228,7 @@ class Game:
 		self.graphics = Graphics(main_surface, self.level.num_rows, self.level.num_cols)
 		# crashes is a list of tuples of positions. For each crash that occurred, it holds the coordinates of the
 		# two squares between which the crash happened
-		self.crashes = []
+		self.crashes: [((int, int), (int, int))] = []
 		self.free_squares = set([(i, j) for i, row in enumerate(level.map) for j, obj in enumerate(row) if obj == utils.Objects.NONE]) - set([pos for snake in self.snakes for pos in snake.pos])
 		self.upd_snake_events = [pygame.event.Event(event_id, {"snake_idx": idx}) for idx, event_id in enumerate(UPDATE_SNAKES[:len(self.snakes)])]
 		self.reocc_event = pygame.event.Event(REOCC_TIMER, {"duration": REOCC_DUR})
@@ -240,7 +241,8 @@ class Game:
 		# If no additional index is needed, None is used for the latter.
 		# The values of the dict are ints showing the countdown for the specific element w.r.t. to REOCC_DUR.
 		self.counters = {(utils.Cntble.DROP_ITEM, None): DROP_ITEM_SPEED * REOCC_PER_SEC}
-		self.bombs = []
+		self.bombs: {(int, int): int} = {}
+		self.explosions: {(int, int): int} = {}
 
 	def init_snake_pos(self) -> None:
 		"""Initialize the positions of the snakes"""
@@ -254,7 +256,7 @@ class Game:
 			pygame.time.set_timer(self.upd_snake_events[snake.idx], int(1000 / snake.speed))
 		# pygame.time.set_timer(DROP_ITEM, DROP_ITEM_SPEED)
 		pygame.time.set_timer(self.reocc_event, REOCC_DUR)
-		self.graphics.update_display(self.level, self.snakes, self.crashes, self.create_bomb_dict())
+		self.graphics.update_display(self.level, self.snakes, self.crashes, self.bombs, self.explosions)
 		# start game loop
 		is_running = True
 		crashed = False
@@ -291,7 +293,7 @@ class Game:
 							self.item_sounds[item].play()
 					for snake in snakes_to_update:
 						pygame.time.set_timer(self.upd_snake_events[snake.idx], int(1000 / snake.speed))
-				self.graphics.update_display(self.level, self.snakes, self.crashes, self.create_bomb_dict())
+				self.graphics.update_display(self.level, self.snakes, self.crashes, self.bombs, self.explosions)
 				if self.crashes and not crashed:
 					self.crash_sound.play()
 					crashed = True
@@ -307,7 +309,7 @@ class Game:
 			new_square = utils.add_tuples([snake.head, snake.orientation])
 			obj_at_new_pos = self.level.map[new_square[0]][new_square[1]]
 			match obj_at_new_pos:
-				case utils.Objects.WALL:
+				case obj if obj in utils.Hurting:
 					self.crashes.append((snake.head, new_square))
 				case item if item in utils.Speeding:
 					snake.adjust_speed(SPEEDING_FACTORS[item])
@@ -338,8 +340,8 @@ class Game:
 
 	def update_counting(self):
 		""""Update all counting game elements"""
-		elem_to_delete = []
-		elem_to_add = {}
+		# elem_to_delete = []
+		# elem_to_add = {}
 		for k, v in self.counters.items():
 			elem, idx = k
 			if v == 1:
@@ -353,30 +355,55 @@ class Game:
 						self.free_squares -= {(i, j)}
 						self.counters[k] = DROP_ITEM_SPEED * REOCC_PER_SEC
 						if new_object == utils.Objects.BOMB:
-							elem_to_add[(utils.Cntble.BOMB, len(self.bombs))] = int(BOMB_COUNTDOWN * REOCC_PER_SEC)
-							self.bombs.append((i, j))
-					case utils.Cntble.BOMB:
-						self.handle_explosion(idx)
-						elem_to_delete.append(k)
-						pass
+							# elem_to_add[(utils.Cntble.BOMB, len(self.bombs))] = BOMB_COUNTDOWN * REOCC_PER_SEC
+							self.bombs[(i, j)] = BOMB_CNTDWN * REOCC_PER_SEC
+					# case utils.Cntble.BOMB:
+					# 	self.handle_explosion(idx)
+					# 	elem_to_delete.append(k)
+					# 	pass
 					case _:
 						pass
 			else:
 				self.counters[k] -= 1
-		for k in elem_to_delete:
-			del self.counters[k]
-		for k, v in elem_to_add.items():
-			self.counters[k] = v
+		# for k in elem_to_delete:
+		# 	del self.counters[k]
+		# for k, v in elem_to_add.items():
+		# 	self.counters[k] = v
+		# Update bombs
+		for pos in list(self.bombs.keys()):
+			self.bombs[pos] -= 1
+			if self.bombs[pos] == 0:
+				self.handle_explosion(pos)
+		# Update explosions
+		for pos in list(self.explosions.keys()):
+			self.explosions[pos] -= 1
+			if self.explosions[pos] == 0:
+				self.explosion_is_over(pos)
 
-	def handle_explosion(self, bomb_idx: int):
-		# TODO: Implement explosion handling
-		row, col = self.bombs.pop(bomb_idx)
-		self.level.map[row][col] = utils.Objects.NONE
-		self.free_squares |= {(row, col)}
+	def handle_explosion(self, bomb_pos: (int, int)) -> None:
+		"""Update the situation when a bomb explodes"""
+		row, col = bomb_pos
+		exploded_squares = [(row - 1 + i, col - 1 + j) for i in range(3) for j in range(3)]
+		for i, j in exploded_squares:
+			if self.level.map[i][j] not in utils.Undestroyable:
+				self.level.map[i][j] = utils.Objects.EXPLOSION
+		# Check for exploded snakes
+		self.crashes.extend([(pos, pos) for snake in self.snakes for pos in snake.pos if pos in exploded_squares])
+		# Update dicts
+		self.explosions[bomb_pos] = EXPLOSION_CNTDWN * REOCC_PER_SEC
+		del self.bombs[bomb_pos]
 		return
 
-	def create_bomb_dict(self) -> {(int, int): int}:
-		return {loc: self.counters[(utils.Cntble.BOMB, idx)] for idx, loc in enumerate(self.bombs)}
+	def explosion_is_over(self, pos: (int, int)) -> None:
+		"""Update the situation when an explosion cools down"""
+		row, col = pos
+		rel_squares = [(row - 1 + i, col - 1 + j) for i in range(3) for j in range(3)]
+		for i, j in rel_squares:
+			self.level.map[i][j] = utils.Objects.NONE
+		del self.explosions[pos]
+
+	# def create_bomb_dict(self) -> {(int, int): int}:
+	# 	return {loc: self.counters[(utils.Cntble.BOMB, idx)] for idx, loc in enumerate(self.bombs)}
 
 	# def countdown_expired(self, elem: utils.Cntble):
 	# 	match elem:
@@ -442,7 +469,7 @@ class Graphics:
 					  for obj, img_orig in self.items_orig.items()}
 		self.bomb_anim = animations.Animation(FILENAME_BOMB, self.square_size)
 		self.explosion_anim = animations.Animation(FILENAME_EXPLOSION, (3 * self.edge_size, 3 * self.edge_size))
-		self.explosions = {}
+		# self.explosions = {}
 		self.snake_parts_orig = {k: [pygame.image.load(filename).convert_alpha() for filename in v] for k, v in FILENAME_SNAKE_PARTS.items()}
 		self.snake_parts = {k: [pygame.transform.scale(img_orig, self.square_size) for img_orig in v] for k, v in self.snake_parts_orig.items()}
 		status_img_size = utils.mult_tuple_to_int(rect_size, 1)
@@ -453,30 +480,37 @@ class Graphics:
 		self.snake_name_font = pygame.font.Font(None, SNAKE_NAME_FONT_SIZE)
 		self.snake_info_font = pygame.font.Font(None, SNAKE_INFO_FONT_SIZE)
 
-	def update_display(self, level: Level, snakes: [Snake], crashes: [((int, int), (int, int))], bombs: {(int, int): int}) -> None:
+	def update_display(self, level: Level, snakes: [Snake], crashes: [((int, int), (int, int))], bombs: {(int, int): int}, explosions: {(int, int): int}) -> None:
 		"""Draw everything onto the screen"""
 		self.main_surface.fill(BG_COLOR)
 		# Draw level
 		wall_color = GREY
 		for row, obj_row in enumerate(level.map):
 			for col, obj in enumerate(obj_row):
-				screen_pos = self.grid_to_screen_pos((row, col))
+				grid_pos = (row, col)
+				screen_pos = self.grid_to_screen_pos(grid_pos)
 				if obj == utils.Objects.WALL:
 					pygame.draw.rect(self.map_surface, wall_color, pygame.rect.Rect(screen_pos, self.square_size))
 				elif obj == utils.Objects.BOMB:
-					cur_frame_id = self.bomb_anim.num_frames - bombs[(row, col)]
+					cur_frame_id = self.bomb_anim.num_frames - bombs[grid_pos]
 					cur_frame = self.bomb_anim.pygame_frames[cur_frame_id]
 					self.map_surface.blit(cur_frame, screen_pos)
-					if bombs[(row, col)] == 1:
-						self.explosions[screen_pos] = -1
+					# if bombs[(row, col)] == 1:
+					# 	self.explosions[screen_pos] = -1
+				elif obj == utils.Objects.EXPLOSION:
+					# Only draw explosion anim once for the center, not for every square of the 3x3 explosion
+					if grid_pos in explosions:
+						cur_frame_id = self.explosion_anim.num_frames - explosions[grid_pos]
+						cur_frame = self.explosion_anim.pygame_frames[cur_frame_id]
+						self.map_surface.blit(cur_frame, utils.subtract_tuples(screen_pos, self.square_size))
 				elif obj != utils.Objects.NONE:
 					self.map_surface.blit(self.items[obj], screen_pos)
-		# Draw explosions
-		for screen_pos, frame_id in self.explosions.items():
-			if frame_id >= 0:
-				self.map_surface.blit(self.explosion_anim.pygame_frames[frame_id], utils.subtract_tuples(screen_pos, self.square_size))
-			self.explosions[screen_pos] += 1
-		self.explosions = {k: v for k, v in self.explosions.items() if v < self.explosion_anim.num_frames}
+		# # Draw explosions
+		# for screen_pos, frame_id in self.explosions.items():
+		# 	if frame_id >= 0:
+		# 		self.map_surface.blit(self.explosion_anim.pygame_frames[frame_id], utils.subtract_tuples(screen_pos, self.square_size))
+		# 	self.explosions[screen_pos] += 1
+		# self.explosions = {k: v for k, v in self.explosions.items() if v < self.explosion_anim.num_frames}
 		# Draw snakes
 		for snake in snakes:
 			for idx, pos in enumerate(snake.pos):

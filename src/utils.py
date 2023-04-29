@@ -25,12 +25,15 @@ class Objects(Flag):
 	TEA = auto()
 	BEER = auto()
 	BOMB = auto()
+	EXPLOSION = auto()
 
 
 Eatable = Objects.APPLE | Objects.MELON | Objects.COFFEE | Objects.TEA | Objects.BEER
 Growing = Objects.APPLE | Objects.MELON
 Speeding = Objects.COFFEE | Objects.TEA
 Complex = Objects.BEER | Objects.BOMB
+Hurting = Objects.WALL | Objects.EXPLOSION
+Undestroyable = Objects.WALL
 
 
 def string_to_object(string: str) -> Objects:
