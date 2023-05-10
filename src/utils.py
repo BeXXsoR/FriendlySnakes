@@ -24,14 +24,15 @@ class Objects(Flag):
 	COFFEE = auto()
 	TEA = auto()
 	BEER = auto()
+	CHILI = auto()
 	BOMB = auto()
 	EXPLOSION = auto()
 
 
-Eatable = Objects.APPLE | Objects.MELON | Objects.COFFEE | Objects.TEA | Objects.BEER
+Eatable = Objects.APPLE | Objects.MELON | Objects.COFFEE | Objects.TEA | Objects.BEER | Objects.CHILI
 Growing = Objects.APPLE | Objects.MELON
 Speeding = Objects.COFFEE | Objects.TEA
-Complex = Objects.BEER | Objects.BOMB
+Complex = Objects.BEER | Objects.BOMB | Objects.CHILI
 Hurting = Objects.WALL | Objects.EXPLOSION
 Undestroyable = Objects.WALL
 
@@ -46,6 +47,7 @@ def string_to_object(string: str) -> Objects:
 		case "t": return Objects.TEA
 		case "b": return Objects.BEER
 		case "o": return Objects.BOMB
+		case "h": return Objects.CHILI
 		case _: return Objects.NONE
 
 
@@ -57,6 +59,11 @@ def strings_to_objects(strings: [str], sep: str = ",") -> [[Objects]]:
 def add_tuples(tuple_list: list[tuple[float, ...]]) -> tuple[float, ...]:
 	"""Add all tuples in the list itemwise"""
 	return tuple([sum(items) for items in zip(*tuple_list)])
+
+
+def add_two_tuples(tuple1, tuple2) -> tuple:
+	"""Add two tuples itemwise"""
+	return add_tuples([tuple1, tuple2])
 
 
 def subtract_tuples(tuple1: tuple[float, ...], tuple2: tuple[float, ...]) -> tuple[float, ...]:
@@ -87,3 +94,8 @@ def tuple_to_int(tuple1: tuple[float, ...]) -> tuple[int, ...]:
 def get_tuple_signs(tuple1: tuple[float, ...]) -> tuple[int, ...]:
 	"""Map a tuple of numbers to a tuple of 1, 0 or -1, based on the sign of each integer"""
 	return tuple([1 if a > 0 else -1 if a < 0 else 0 for a in tuple1])
+
+
+def get_next_squares(pos: (int, int), direction: (int, int), num_squares: int) -> [(int, int)]:
+	"""Return the next squares, starting from the given pos in the given direction"""
+	return [add_two_tuples(pos, mult_tuple_to_int(direction, i)) for i in range(1, num_squares + 1)]
