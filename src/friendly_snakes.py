@@ -203,8 +203,9 @@ class Snake:
 		"""Adjust the speed of the snake by multiplying it with the given factor"""
 		self.speed = max(MIN_SNAKE_SPEED, min(int(factor * self.speed), MAX_SNAKE_SPEED))
 
-	def update_counting(self):
-		"""Handle reoccurring updates"""
+	def update_counting(self) -> [(int, int)]:
+		"""Handle reoccurring updates. Returns a list of dangerous squares (e.g. ones where fire is spit)"""
+		dang_squares = []
 		# Check drunk countdown
 		if self.is_drunk > 1:
 			self.is_drunk -= 1
@@ -214,11 +215,12 @@ class Snake:
 		if self.piquancy_growing > 1:
 			self.piquancy_growing -= 1
 		elif self.piquancy_growing == 1:
-			self.spit_fire()
+			dang_squares.extend(self.spit_fire())
 		if self.spits_fire > 1:
 			self.spits_fire -= 1
 		elif self.spits_fire == 1:
 			self.release_fire()
+		return dang_squares
 
 	def get_drunk(self) -> None:
 		"""Handle the snake getting drunk"""
@@ -241,11 +243,12 @@ class Snake:
 		"""Handle the snake eating a chili"""
 		self.piquancy_growing = max(self.piquancy_growing, PIQUANCY_GROWING_DURATION * REOCC_PER_SEC)
 
-	def spit_fire(self) -> None:
-		"""Handle the piquancy countdown running out"""
+	def spit_fire(self) -> [(int, int)]:
+		"""Handle the piquancy countdown running out. Returns a list of dangerous squares"""
 		self.piquancy_growing = 0
 		self.spits_fire = max(self.spits_fire, SPIT_FIRE_DURATION * REOCC_PER_SEC)
 		self.spit_fire_posis = utils.get_next_squares(self.head, self.orientation, SPIT_FIRE_RANGE)
+		return self.spit_fire_posis
 
 	def release_fire(self):
 		"""Stop the snake spitting fire"""
@@ -324,8 +327,11 @@ class Game:
 				elif event.type == REOCC_TIMER and not crashed:
 					# update all counting game elements
 					self.update_counting()
+					threatened_squares = []
 					for snake in self.snakes:
-						snake.update_counting()
+						threatened_squares.extend(snake.update_counting())
+					crashed_squares = self.is_snake_on_squares(threatened_squares)
+					self.crashes.extend([(pos, pos) for pos in crashed_squares])
 				# Update display
 				if snakes_to_update:
 					for item in self.update_snakes(snakes_to_update):
@@ -350,6 +356,8 @@ class Game:
 		# update snake positions locally and check for collisions with obstacles
 		for snake in snakes_to_upd:
 			new_square = utils.add_tuples([snake.head, snake.orientation])
+			if utils.get_next_squares(new_square, snake.orientation, 2)[-1] in snake.pos:
+				pass
 			obj_at_new_pos = self.level.map[new_square[0]][new_square[1]]
 			match obj_at_new_pos:
 				case obj if obj in utils.Hurting:
@@ -376,14 +384,15 @@ class Game:
 			objects.append(obj_at_new_pos)
 			new_snake_pos = [new_square] + (snake.pos if snake.is_growing > 0 else snake.pos[:-1])
 			new_posis.append(new_snake_pos)
-			new_spit_fire_posis.append(utils.get_next_squares(new_snake_pos[0], utils.subtract_tuples(new_snake_pos[0], new_snake_pos[1]), SPIT_FIRE_RANGE))
+			if snake.spits_fire:
+				new_spit_fire_posis.append(utils.get_next_squares(new_snake_pos[0], utils.subtract_tuples(new_snake_pos[0], new_snake_pos[1]), SPIT_FIRE_RANGE))
 		# Check for crashes with same snake
 		self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos in new_posis if new_pos[0] in new_pos[1:]])
 		# Check for crashes with other snakes
 		self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos, other_pos in itertools.product(new_posis, new_posis + remaining_posis) if new_pos != other_pos and new_pos[0] in other_pos])
 		# Check for crashes by snakes running into explosions
 		exploding_squares = [(row - 1 + i, col - 1 + j) for (row, col) in self.explosions for i in range(3) for j in range(3)]
-		self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos in new_posis  if new_pos[0] in exploding_squares])
+		self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos in new_posis if new_pos[0] in exploding_squares])
 		# Update real snake positions if no crash happened
 		if not self.crashes:
 			for snake, new_pos in zip(snakes_to_upd, new_posis):
@@ -398,8 +407,6 @@ class Game:
 
 	def update_counting(self):
 		""""Update all counting game elements"""
-		# elem_to_delete = []
-		# elem_to_add = {}
 		# Update explosions
 		for pos in list(self.explosions.keys()):
 			self.explosions[pos] -= 1
@@ -428,21 +435,11 @@ class Game:
 						self.free_squares -= {(i, j)}
 						self.counters[k] = DROP_ITEM_SPEED * REOCC_PER_SEC
 						if new_object == utils.Objects.BOMB:
-							# elem_to_add[(utils.Cntble.BOMB, len(self.bombs))] = BOMB_COUNTDOWN * REOCC_PER_SEC
 							self.bombs[(i, j)] = (BOMB_CNTDWN * REOCC_PER_SEC, NO_ORIENTATION)
-					# case utils.Cntble.BOMB:
-					# 	self.handle_explosion(idx)
-					# 	elem_to_delete.append(k)
-					# 	pass
 					case _:
 						pass
 			else:
 				self.counters[k] -= 1
-		# for k in elem_to_delete:
-		# 	del self.counters[k]
-		# for k, v in elem_to_add.items():
-		# 	self.counters[k] = v
-		# Update bombs
 
 	def handle_explosion(self, bomb_pos: (int, int)) -> None:
 		"""Update the situation when a bomb explodes"""
@@ -484,6 +481,10 @@ class Game:
 		self.bombs[new_pos] = (cntdwn, orientation)
 		del self.bombs[old_pos]
 		return new_pos, False
+
+	def is_snake_on_squares(self, squares: [(int, int)]) -> [(int, int)]:
+		"""Returns all the squares of the given square list where a snake is on"""
+		return [pos for pos in squares for snake in self.snakes if pos in snake.pos]
 
 	def create_bomb_dict(self) -> {(int, int): int}:
 		return {pos: cntdwn for pos, (cntdwn, orientation) in self.bombs.items()}
@@ -557,7 +558,7 @@ class Graphics:
 		self.main_surface.fill(BG_COLOR)
 		# Draw level
 		wall_color = GREY
-		exploding_squares = [(center[0] - 1 + i, center[1] - 1 + j) for center in explosions for i in range(3) for j in range(3)]
+		# exploding_squares = [(center[0] - 1 + i, center[1] - 1 + j) for center in explosions for i in range(3) for j in range(3)]
 		for row, obj_row in enumerate(level.map):
 			for col, obj in enumerate(obj_row):
 				grid_pos = (row, col)
@@ -580,6 +581,9 @@ class Graphics:
 		for grid_pos in explosions:
 			screen_pos = self.grid_to_screen_pos(grid_pos)
 			cur_frame_id = self.explosion_anim.num_frames - explosions[grid_pos]
+			# FS-35: There's a weird bug with the first frame of the animation showing in white instead of colored,
+			# so as a workaround we use the 2nd frame twice
+			cur_frame_id = max(cur_frame_id, 1)
 			cur_frame = self.explosion_anim.pygame_frames[cur_frame_id]
 			self.map_surface.blit(cur_frame, utils.subtract_tuples(screen_pos, self.square_size))
 		# Draw snakes
