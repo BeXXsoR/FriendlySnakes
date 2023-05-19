@@ -93,9 +93,14 @@ class Communicator:
 		# pygame.mixer_music.load(FILENAME_TITLE_THEME)
 		# pygame.mixer_music.play(fade_ms=2000)
 		self.start_menu = menu.StartMenu(self.main_surface)
+		# Wait for user pressing key
+		key_pressed = False
+		while not key_pressed:
+			for event in pygame.event.get():
+				if event.type == pygame.KEYDOWN:
+					key_pressed = True
+		self.start_menu.slide_menu_in()
 		self.start_menu.handle_events()
-		# pygame.mixer_music.fadeout(2000)
-		# pygame.time.delay(2000)
 		# self.game = Game(player_names, player_colors, player_controls, self.levels[0], self.main_surface)
 		self.game = Game(player_names[:1], player_colors[:1], player_controls[:1], self.levels[0], self.main_surface)
 		# self.game = Game(player_names[:2], player_colors[:2], player_controls[:2], self.levels[0], self.main_surface)

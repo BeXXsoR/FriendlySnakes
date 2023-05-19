@@ -39,22 +39,29 @@ FILENAME_KEY_BG = "../res/key_bg.png"
 FILENAME_ROOT_LVL_PREV = "../res/level_prev_{}.png"
 FILENAME_BG = "../res/menu_bg.png"
 FILENAME_TITLE_THEME = "../res/title_theme.ogg"
-FILENAME_MENU_SIDE_BAR = "../res/menu_side_bar.png"
+# FILENAME_MENU_SIDE_BAR = "../res/menu_side_bar.png"
+FILENAME_MENU_FRAME = "../res/menu_frame.png"
 FILENAMES_BUTTON = {ButtonState.NORMAL: "../res/menu_button_normal.png", ButtonState.PUSHED: "../res/menu_button_pushed.png", ButtonState.HOVERED: "../res/menu_button_hovered.png"}
 TEXTS_BUTTON = {Language.GERMAN: ["Neues Spiel", "Profil wählen", "Steuerung", "Optionen", "Verlassen"],
 				Language.ENGLISH: ["New game", "Choose profile", "Controls", "Options", "Exit"]}
 FADE_MS = 1
 FPS = 60
+# benchmark screen: 2560x1440
+BENCHMARK_HEIGHT = 1440
+MENU_FRAME_START = (0, 300)
+MENU_FRAME_SIZE = (554, 705)
+BUTTON_AREA_START = (36, 267)
+BUTTON_AREA_SIZE = (424, 369)
+BUTTON_HEIGHT = 50
 MENU_AREA_START = (0.01, 0.3)
 MENU_AREA_SIZE = (0.2, 1 - 2 * MENU_AREA_START[1])
 MENU_SIDE_BAR_SIZE = (0.1, 1)
 BUTTON_SIZE = (1, 0.15)
-BUTTON_FONT_SIZE = 20
+BUTTON_FONT_SIZE = 25
 MAP_TO_SCREEN_RATIO = 0.9
 TITLE_FONT_SIZE = 200
 SNAKE_NAME_FONT_SIZE = 80
 CONTROLS_FONT_SIZE = 30
-BENCHMARK_HEIGHT = 1440
 TITLE_HEIGHT = 0.1
 SNAKE_SETTINGS_HEIGHT = 0.4
 # Heights of elements inside the snake settings areas
@@ -150,26 +157,29 @@ class StartMenu:
 		self.bg_img = pygame.transform.scale(pygame.image.load(FILENAME_BG).convert_alpha(), self.main_surface.get_size())
 		# Initialize the menu - 1st, define all the areas, rects, images, etc.
 		#   Menu area
-		self.menu_rect = pygame.Rect(MENU_AREA_START[0] * self.main_surface.get_width(), MENU_AREA_START[1] * self.main_surface.get_height(), MENU_AREA_SIZE[0] * self.main_surface.get_width(), MENU_AREA_SIZE[1] * self.main_surface.get_height())
+		# self.menu_rect = pygame.Rect(MENU_AREA_START[0] * self.main_surface.get_width(), MENU_AREA_START[1] * self.main_surface.get_height(), MENU_AREA_SIZE[0] * self.main_surface.get_width(), MENU_AREA_SIZE[1] * self.main_surface.get_height())
+		self.menu_rect = pygame.Rect(utils.mult_tuple_to_int(MENU_FRAME_START, self.scaling_factor), utils.mult_tuple_to_int(MENU_FRAME_SIZE, self.scaling_factor))
 		self.menu_surf = self.main_surface.subsurface(self.menu_rect)
-		self.side_bar_rect = pygame.Rect(0, 0, MENU_SIDE_BAR_SIZE[0] * self.menu_rect.w, MENU_SIDE_BAR_SIZE[1] * self.menu_rect.h)
-		self.side_bar_img = pygame.transform.scale(pygame.image.load(FILENAME_MENU_SIDE_BAR).convert_alpha(), self.side_bar_rect.size)
+		self.menu_frame_img = pygame.transform.scale(pygame.image.load(FILENAME_MENU_FRAME).convert_alpha(), self.menu_rect.size)
+		# self.side_bar_rect = pygame.Rect(0, 0, MENU_SIDE_BAR_SIZE[0] * self.menu_rect.w, MENU_SIDE_BAR_SIZE[1] * self.menu_rect.h)
+		# self.side_bar_img = pygame.transform.scale(pygame.image.load(FILENAME_MENU_SIDE_BAR).convert_alpha(), self.side_bar_rect.size)
 		#   Button area inside the menu area
-		buttons_area_start = (int(0.5 * MENU_SIDE_BAR_SIZE[0] * self.menu_rect.w), int(0.1 * MENU_SIDE_BAR_SIZE[1] * self.menu_rect.h))
-		buttons_area_size = (self.menu_rect.w - buttons_area_start[0], self.menu_rect.h - 2 * buttons_area_start[1])
+		buttons_area_start = utils.mult_tuple_to_int(BUTTON_AREA_START, self.scaling_factor)
+		buttons_area_size = utils.mult_tuple_to_int(BUTTON_AREA_SIZE, self.scaling_factor)
 		self.buttons_area_rect = pygame.Rect(buttons_area_start, buttons_area_size)
 		self.buttons_surf = self.menu_surf.subsurface(self.buttons_area_rect)
 		#   Buttons inside the button area
 		num_buttons = len(self.button_texts)
-		self.button_size = (int(BUTTON_SIZE[0] * self.buttons_area_rect.w), int(BUTTON_SIZE[1] * self.buttons_area_rect.h))
+		self.button_size = (self.buttons_area_rect.w, self.scaling_factor * BUTTON_HEIGHT)
 		free_space = (self.buttons_area_rect.h - num_buttons * self.button_size[1]) / (num_buttons - 1)
 		self.button_rects = [pygame.Rect((0, i * (self.button_size[1] + free_space)), self.button_size) for i in range(num_buttons)]
 		self.button_imgs_orig = {state: pygame.image.load(FILENAMES_BUTTON[state]).convert_alpha() for state in ButtonState}
 		self.button_imgs = {state: pygame.transform.scale(img_orig, self.button_size) for state, img_orig in self.button_imgs_orig.items()}
-		self.button_font = pygame.font.SysFont("segoeuisymbol", int(BUTTON_FONT_SIZE * self.scaling_factor))
+		#   Texts for the buttons
+		self.button_font = pygame.font.SysFont("Snake Chan", int(BUTTON_FONT_SIZE * self.scaling_factor))
 		self.button_texts_rend = [self.button_font.render(text, True, WHITE) for text in self.button_texts]
 		#   2nd, define the sprites for the objects
-		self.menu_side_bar = BasicSprite(self.side_bar_img, self.side_bar_rect)
+		# self.menu_side_bar = BasicSprite(self.side_bar_img, self.side_bar_rect)
 		self.on_click_functions = [self.click_on_new_game_button, self.click_on_profile_button, self.click_on_controls_button, self.click_on_options_button, self.click_on_exit_button]
 		self.buttons = [Clickable(self.button_imgs[ButtonState.NORMAL], rect, func) for rect, func in zip(self.button_rects, self.on_click_functions)]
 		self.button_group = ClickableGroup(*self.buttons)
@@ -224,6 +234,28 @@ class StartMenu:
 		self.clock = pygame.time.Clock()
 		pygame.mixer_music.load(FILENAME_TITLE_THEME)
 		pygame.mixer_music.play()
+		self.main_surface.blit(self.bg_img, (0, 0))
+		# Test - Press any key text
+		msg_font = pygame.font.SysFont("Snake Chan", 40)
+		msg_rendered = msg_font.render("Press any key", True, WHITE)
+		self.main_surface.blit(msg_rendered, msg_rendered.get_rect(center=(self.main_surface.get_rect().centerx, 0.95 * self.main_surface.get_height())))
+		# End test
+		pygame.display.update()
+
+	def slide_menu_in(self) -> None:
+		"""Slide the menu in from the left edge"""
+		speed = 5
+		cur_topleft = (-self.menu_rect.w, self.menu_rect.top)
+		while cur_topleft[0] <= 0:
+			self.main_surface.blit(self.bg_img, (0, 0))
+			for rect, text in zip(self.button_rects, self.button_texts_rend):
+				button_topleft = utils.add_tuples([cur_topleft, rect.topleft, self.buttons_area_rect.topleft])
+				cur_button_rect = pygame.Rect(button_topleft, self.button_size)
+				self.main_surface.blit(self.button_imgs[ButtonState.NORMAL], button_topleft)
+				self.main_surface.blit(text, text.get_rect(center=cur_button_rect.center))
+			self.main_surface.blit(self.menu_frame_img, cur_topleft)
+			cur_topleft = (cur_topleft[0] + speed, cur_topleft[1])
+			pygame.display.update()
 		self.update_display()
 
 	def handle_events(self):
@@ -290,9 +322,10 @@ class StartMenu:
 		"""Display the current state on the screen"""
 		self.main_surface.blit(self.bg_img, (0, 0))
 		self.button_group.draw(self.buttons_surf)
-		self.menu_surf.blit(self.side_bar_img, self.side_bar_rect)
+		# self.menu_surf.blit(self.side_bar_img, self.side_bar_rect)
 		for rect, text in zip(self.button_rects, self.button_texts_rend):
 			self.buttons_surf.blit(text, text.get_rect(center=rect.center))
+		self.main_surface.blit(self.menu_frame_img, self.menu_rect)
 		# pygame.draw.rect(self.main_surface, RED, self.menu_rect, width=1)
 		# pygame.draw.rect(self.menu_surf, GREY, self.side_bar_rect, width=1)
 		# pygame.draw.rect(self.menu_surf, ORANGE, self.button_area_rect, width=1)
