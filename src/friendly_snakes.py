@@ -59,6 +59,8 @@ FILENAME_ITEMS = {utils.Objects.APPLE: "../res/apple.png", utils.Objects.MELON: 
 FILENAME_FIRE_SPIT = "../res/fire_spit.png"
 FILENAME_BOMB = "../res/bomb.gif"
 FILENAME_EXPLOSION = "../res/explosion.gif"
+FILENAME_DRUNK = "../res/drunk.gif"
+FILENAME_PIQU_RISING = "../res/piquancy_rising.gif"
 FILENAME_SPEEDO = "../res/speedo.png"
 FILENAMES_BG = {utils.Backgrounds.DESERT: "../res/bg_desert.png"}
 FILENAME_ITEM_SOUNDS = {utils.Objects.APPLE: "../res/eat.ogg", utils.Objects.MELON: "../res/eat.ogg", utils.Objects.CHILI: "../res/eat.ogg",
@@ -556,6 +558,8 @@ class Graphics:
 		self.fire = pygame.transform.scale(pygame.image.load(FILENAME_FIRE_SPIT).convert_alpha(), (SPIT_FIRE_RANGE * self.edge_size, self.edge_size))
 		self.bomb_anim = animations.Animation(FILENAME_BOMB, self.square_size)
 		self.explosion_anim = animations.Animation(FILENAME_EXPLOSION, (3 * self.edge_size, 3 * self.edge_size))
+		self.drunk_anim = animations.Animation(FILENAME_DRUNK, self.square_size)
+		self.piqu_rising_anim = animations.Animation(FILENAME_PIQU_RISING, self.square_size)
 		# self.explosions = {}
 		self.snake_parts_orig = {k: [pygame.image.load(filename).convert_alpha() for filename in v] for k, v in FILENAME_SNAKE_PARTS.items()}
 		self.snake_parts = {k: [pygame.transform.scale(img_orig, self.square_size) for img_orig in v] for k, v in self.snake_parts_orig.items()}
@@ -608,8 +612,16 @@ class Graphics:
 			for idx, pos in enumerate(snake.pos):
 				screen_pos = self.grid_to_screen_pos(pos)
 				if idx == 0 and snake.color in self.snake_parts:
-					# snake head
+					# snake head (incl. piquancy and drunk animation)
 					self.map_surface.blit(pygame.transform.rotate(self.snake_parts[snake.color][utils.SnakeParts.HEAD.value], ROTATIONS_STRAIGHT[head_orientation]), screen_pos)
+					if snake.piquancy_growing > 0:
+						cur_frame_id = self.piqu_rising_anim.num_frames - snake.piquancy_growing
+						cur_frame = self.piqu_rising_anim.pygame_frames[cur_frame_id]
+						self.map_surface.blit(pygame.transform.rotate(cur_frame, ROTATIONS_STRAIGHT[head_orientation]), screen_pos)
+					if snake.is_drunk > 0:
+						cur_frame_id = self.drunk_anim.num_frames - snake.is_drunk
+						cur_frame = self.drunk_anim.pygame_frames[cur_frame_id]
+						self.map_surface.blit(pygame.transform.rotate(cur_frame, ROTATIONS_STRAIGHT[head_orientation]), screen_pos)
 				elif idx == len(snake.pos) - 1 and snake.color in self.snake_parts:
 					# snake tail
 					tail_orientation = utils.subtract_tuples_int(snake.pos[idx - 1], pos)
