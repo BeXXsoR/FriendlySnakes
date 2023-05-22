@@ -27,7 +27,7 @@
 			"w, , , , , , , , , , , , , , , , , ,h, , , , , ,w",
 			"w, , , , ,m, , , , , , ,m,m,m,m,m,m, , , , , , ,w",
 			"w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w"],
-		"item_rates": {"a": 6, "m": 2, "c": 2, "t": 2, "b": 1, "o": 1, "h": 1},
+		"item_rates": {"a": 6, "m": 2, "c": 2, "t": 2, "b": 1, "o": 50, "h": 1},
 		"trg_score": 100,
 		"profiles": {}
 	},

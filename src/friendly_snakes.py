@@ -60,6 +60,7 @@ FILENAME_FIRE_SPIT = "../res/fire_spit.png"
 FILENAME_BOMB = "../res/bomb.gif"
 FILENAME_EXPLOSION = "../res/explosion.gif"
 FILENAME_SPEEDO = "../res/speedo.png"
+FILENAMES_BG = {utils.Backgrounds.DESERT: "../res/bg_desert.png"}
 FILENAME_ITEM_SOUNDS = {utils.Objects.APPLE: "../res/eat.ogg", utils.Objects.MELON: "../res/eat.ogg", utils.Objects.CHILI: "../res/eat.ogg",
 						utils.Objects.COFFEE: "../res/slurp.ogg", utils.Objects.TEA: "../res/slurp.ogg", utils.Objects.BEER: "../res/burp.ogg"}
 FILENAME_CRASH_SOUND = "../res/crash.ogg"
@@ -92,15 +93,8 @@ class Communicator:
 		self.read_level_infos()
 		# pygame.mixer_music.load(FILENAME_TITLE_THEME)
 		# pygame.mixer_music.play(fade_ms=2000)
-		self.start_menu = menu.StartMenu(self.main_surface)
-		# Wait for user pressing key
-		key_pressed = False
-		while not key_pressed:
-			for event in pygame.event.get():
-				if event.type == pygame.KEYDOWN:
-					key_pressed = True
-		self.start_menu.slide_menu_in()
-		self.start_menu.handle_events()
+		self.start_menu = None
+		self.init_start_menu()
 		# self.game = Game(player_names, player_colors, player_controls, self.levels[0], self.main_surface)
 		self.game = Game(player_names[:1], player_colors[:1], player_controls[:1], self.levels[0], self.main_surface)
 		# self.game = Game(player_names[:2], player_colors[:2], player_controls[:2], self.levels[0], self.main_surface)
@@ -111,6 +105,20 @@ class Communicator:
 			level_infos = json.load(file_level_info)
 		for level_info in level_infos:
 			self.levels.append(Level(level_info))
+
+	def init_start_menu(self):
+		self.start_menu = menu.StartMenu(self.main_surface)
+		# Wait for user pressing key
+		key_pressed = False
+		while not key_pressed:
+			for event in pygame.event.get():
+				if event.type == pygame.KEYDOWN:
+					key_pressed = True
+		self.start_menu.slide_menu_in()
+
+	def handle_start_menu(self) -> bool:
+		"""Handle the start menu. Returns True if the user starts a new game or False if they want to exit"""
+		return self.start_menu.handle_events()
 
 	def start_game(self):
 		# self.game.show_map()
@@ -507,6 +515,7 @@ class Graphics:
 	"""The class for displaying all graphics on the screen"""
 	def __init__(self, main_surface: pygame.Surface, num_rows: int, num_cols: int):
 		self.main_surface = main_surface
+		self.bg = pygame.transform.scale(pygame.image.load(FILENAMES_BG[utils.Backgrounds.DESERT]).convert_alpha(), self.main_surface.get_size())
 		self.edge_size = int(min(self.main_surface.get_width() * MAP_TO_SCREEN_RATIO / num_cols, self.main_surface.get_height() * MAP_TO_SCREEN_RATIO / num_rows))
 		self.square_size = (self.edge_size, self.edge_size)
 		map_size = (self.edge_size * num_cols, self.edge_size * num_rows)
@@ -560,7 +569,9 @@ class Graphics:
 
 	def update_display(self, level: Level, snakes: [Snake], crashes: [((int, int), (int, int))], bombs: {(int, int): int}, explosions: {(int, int): int}) -> None:
 		"""Draw everything onto the screen"""
-		self.main_surface.fill(BG_COLOR)
+		# Draw background
+		# self.main_surface.fill(BG_COLOR)
+		self.main_surface.blit(self.bg, (0, 0))
 		# Draw level
 		wall_color = GREY
 		# exploding_squares = [(center[0] - 1 + i, center[1] - 1 + j) for center in explosions for i in range(3) for j in range(3)]
@@ -588,7 +599,7 @@ class Graphics:
 			cur_frame_id = self.explosion_anim.num_frames - explosions[grid_pos]
 			# FS-35: There's a weird bug with the first frame of the animation showing in white instead of colored,
 			# so as a workaround we use the 2nd frame twice
-			cur_frame_id = max(cur_frame_id, 1)
+			# cur_frame_id = max(cur_frame_id, 1)
 			cur_frame = self.explosion_anim.pygame_frames[cur_frame_id]
 			self.map_surface.blit(cur_frame, utils.subtract_tuples(screen_pos, self.square_size))
 		# Draw snakes
@@ -675,4 +686,5 @@ class Graphics:
 # ----- Main script ----
 if __name__ == "__main__":
 	comm = Communicator()
-	sys.exit(comm.start_game())
+	if comm.handle_start_menu():
+		sys.exit(comm.start_game())

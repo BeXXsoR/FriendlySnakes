@@ -4,6 +4,11 @@ import itertools
 from enum import Enum, Flag, auto
 
 
+class Backgrounds(Enum):
+	NONE = 0
+	DESERT = 1
+
+
 class SnakeParts(Enum):
 	HEAD = 0
 	BODY_STRAIGHT = 1

@@ -23,6 +23,11 @@ class Animation:
 				self.pygame_frames.append(pygame_frame)
 				self.pil_frames.append(pil_frame)
 		self.num_frames = len(self.pygame_frames)
+		# # FS-35: There's a weird bug with the first frame being shown in white instead of colored.
+		# As a workaround I use the 2nd frame twice.
+		if self.num_frames >= 2:
+			self.pygame_frames[0] = self.pygame_frames[1]
+			self.pil_frames[0] = self.pil_frames[1]
 
 	def get_next_frame(self) -> pygame.Surface:
 		"""Return the next frame of the animation"""

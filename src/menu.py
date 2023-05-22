@@ -140,6 +140,8 @@ class StartMenu:
 	def __init__(self, main_surface: pygame.Surface):
 		"""Initialize the start menu"""
 		self.main_surface = main_surface
+		self.start_game = False
+		self.exit = False
 		self.lang = Language.ENGLISH
 		self.button_texts = TEXTS_BUTTON[self.lang]
 		# self.menu_surface = main_surface.subsurface(main_surface.get_rect())
@@ -258,16 +260,12 @@ class StartMenu:
 			pygame.display.update()
 		self.update_display()
 
-	def handle_events(self):
-		"""Handle the events in the start menu"""
-		global BLACK_TP
-		is_running = True
+	def handle_events(self) -> bool:
+		"""Handle the events in the start menu. Returns True if the user starts a new game or False if they want to exit"""
+		# global BLACK_TP
 		button_pushed = False
-		while is_running:
+		while not self.start_game and not self.exit:
 			for event in pygame.event.get():
-				if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-					# Quit
-					is_running = False
 				if event.type == pygame.MOUSEMOTION and not button_pushed:
 					# Check for hovering over buttons
 					prev_pos = utils.subtract_tuples(event.pos, event.rel)
@@ -286,6 +284,7 @@ class StartMenu:
 				# 	self.bg_img.fill((100, 100, 100, 0), special_flags=pygame.BLEND_RGBA_SUB)
 			self.clock.tick(FPS)
 			self.update_display()
+		return self.start_game
 		# Fade out
 		# pygame.mixer_music.fadeout(FADE_MS)
 		# color_fade_steps = 10
@@ -303,20 +302,24 @@ class StartMenu:
 		# diff = end - start
 		# print("Time: " + str(diff))
 
-	def click_on_new_game_button(self):
+	def click_on_new_game_button(self) -> None:
+		"""Start a new game"""
+		self.exit = False
+		self.start_game = True
+
+	def click_on_profile_button(self) -> None:
 		pass
 
-	def click_on_profile_button(self):
+	def click_on_controls_button(self) -> None:
 		pass
 
-	def click_on_controls_button(self):
+	def click_on_options_button(self) -> None:
 		pass
 
-	def click_on_options_button(self):
-		pass
-
-	def click_on_exit_button(self):
-		pass
+	def click_on_exit_button(self) -> None:
+		"""Exit the application"""
+		self.start_game = False
+		self.exit = True
 
 	def update_display(self) -> None:
 		"""Display the current state on the screen"""
