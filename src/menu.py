@@ -3,6 +3,7 @@
 import utils
 from enum import Enum
 import pygame
+import pygame_menu
 
 pygame.init()
 
@@ -38,12 +39,14 @@ FILENAME_BUTTON = "../res/button.png"
 FILENAME_KEY_BG = "../res/key_bg.png"
 FILENAME_ROOT_LVL_PREV = "../res/level_prev_{}.png"
 FILENAME_BG = "../res/menu_bg.png"
-FILENAME_TITLE_THEME = "../res/title_theme.ogg"
+FILENAMES_MUSIC_TRACKS = ["../res/title_theme.ogg"]
 # FILENAME_MENU_SIDE_BAR = "../res/menu_side_bar.png"
 FILENAME_MENU_FRAME = "../res/menu_frame.png"
 FILENAMES_BUTTON = {ButtonState.NORMAL: "../res/menu_button_normal.png", ButtonState.PUSHED: "../res/menu_button_pushed.png", ButtonState.HOVERED: "../res/menu_button_hovered.png"}
 TEXTS_BUTTON = {Language.GERMAN: ["Neues Spiel", "Profil wählen", "Steuerung", "Optionen", "Verlassen"],
 				Language.ENGLISH: ["New game", "Choose profile", "Controls", "Options", "Exit"]}
+BG_ITEMS = [("Desert", 0)]
+MUSIC_TRACK_ITEMS = [("Bells Song", 0)]
 FADE_MS = 1
 FPS = 60
 # benchmark screen: 2560x1440
@@ -144,8 +147,6 @@ class StartMenu:
 		self.exit = False
 		self.lang = Language.ENGLISH
 		self.button_texts = TEXTS_BUTTON[self.lang]
-		# self.menu_surface = main_surface.subsurface(main_surface.get_rect())
-		# self.menu_surface = pygame.Surface((0, 0), flags=pygame.SRCALPHA)
 		self.snake_names = ["Kokosnuss", "Tiger", "Muh", "Mausi"]
 		self.snake_colors = [GREEN, BLUE, CYAN, PINK]
 		self.snake_controls = [["↑", "←", "↓", "→"], ["W", "A", "S", "D"], ["8", "4", "5", "6"], ["I", "J", "K", "L"]]
@@ -159,12 +160,9 @@ class StartMenu:
 		self.bg_img = pygame.transform.scale(pygame.image.load(FILENAME_BG).convert_alpha(), self.main_surface.get_size())
 		# Initialize the menu - 1st, define all the areas, rects, images, etc.
 		#   Menu area
-		# self.menu_rect = pygame.Rect(MENU_AREA_START[0] * self.main_surface.get_width(), MENU_AREA_START[1] * self.main_surface.get_height(), MENU_AREA_SIZE[0] * self.main_surface.get_width(), MENU_AREA_SIZE[1] * self.main_surface.get_height())
 		self.menu_rect = pygame.Rect(utils.mult_tuple_to_int(MENU_FRAME_START, self.scaling_factor), utils.mult_tuple_to_int(MENU_FRAME_SIZE, self.scaling_factor))
 		self.menu_surf = self.main_surface.subsurface(self.menu_rect)
 		self.menu_frame_img = pygame.transform.scale(pygame.image.load(FILENAME_MENU_FRAME).convert_alpha(), self.menu_rect.size)
-		# self.side_bar_rect = pygame.Rect(0, 0, MENU_SIDE_BAR_SIZE[0] * self.menu_rect.w, MENU_SIDE_BAR_SIZE[1] * self.menu_rect.h)
-		# self.side_bar_img = pygame.transform.scale(pygame.image.load(FILENAME_MENU_SIDE_BAR).convert_alpha(), self.side_bar_rect.size)
 		#   Button area inside the menu area
 		buttons_area_start = utils.mult_tuple_to_int(BUTTON_AREA_START, self.scaling_factor)
 		buttons_area_size = utils.mult_tuple_to_int(BUTTON_AREA_SIZE, self.scaling_factor)
@@ -173,7 +171,7 @@ class StartMenu:
 		#   Buttons inside the button area
 		num_buttons = len(self.button_texts)
 		self.button_size = (self.buttons_area_rect.w, self.scaling_factor * BUTTON_HEIGHT)
-		free_space = (self.buttons_area_rect.h - num_buttons * self.button_size[1]) / (num_buttons - 1)
+		free_space = int((self.buttons_area_rect.h - num_buttons * self.button_size[1]) / (num_buttons - 1))
 		self.button_rects = [pygame.Rect((0, i * (self.button_size[1] + free_space)), self.button_size) for i in range(num_buttons)]
 		self.button_imgs_orig = {state: pygame.image.load(FILENAMES_BUTTON[state]).convert_alpha() for state in ButtonState}
 		self.button_imgs = {state: pygame.transform.scale(img_orig, self.button_size) for state, img_orig in self.button_imgs_orig.items()}
@@ -181,10 +179,33 @@ class StartMenu:
 		self.button_font = pygame.font.SysFont("Snake Chan", int(BUTTON_FONT_SIZE * self.scaling_factor))
 		self.button_texts_rend = [self.button_font.render(text, True, WHITE) for text in self.button_texts]
 		#   2nd, define the sprites for the objects
-		# self.menu_side_bar = BasicSprite(self.side_bar_img, self.side_bar_rect)
 		self.on_click_functions = [self.click_on_new_game_button, self.click_on_profile_button, self.click_on_controls_button, self.click_on_options_button, self.click_on_exit_button]
 		self.buttons = [Clickable(self.button_imgs[ButtonState.NORMAL], rect, func) for rect, func in zip(self.button_rects, self.on_click_functions)]
 		self.button_group = ClickableGroup(*self.buttons)
+		# Submenu Options
+		self.menu_base_image = pygame_menu.BaseImage(image_path=FILENAME_MENU_FRAME, drawing_mode=pygame_menu.baseimage.IMAGE_MODE_FILL)
+		self.menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_LEFT, widget_font=self.button_font, widget_font_antialias=True, widget_font_color=WHITE)
+		self.music_volume = 0.1
+		self.sound_volume = 1
+		self.cur_track_idx = 0
+		self.cur_bg_idx = 0
+		buttons_offset = self.buttons_surf.get_abs_offset()
+		self.submenu_options = pygame_menu.Menu("Options", self.buttons_area_rect.w, self.buttons_area_rect.h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=self.menu_theme)
+		# self.submenu_options = pygame_menu.Menu("Options", self.menu_rect.w, self.menu_rect.h, enabled=False, theme=self.menu_theme)
+		# self.submenu_options.add.range_slider("Music volume", self.music_volume, (0, 1), 0.01, rangeslider_id="MusicVolumeSlider", value_format=lambda x: str(int(x * 100)), onchange=self.change_music_volume, margin=(0, free_space))
+		# self.submenu_options.add.range_slider("Sound volume", self.sound_volume, (0, 1), 0.01, rangeslider_id="SoundVolumeSlider", value_format=lambda x: str(int(x * 100)), onchange=self.change_sound_volume, margin=(0, free_space))
+		sel_music_track = self.submenu_options.add.selector("Music Track: ", MUSIC_TRACK_ITEMS, margin=(0, free_space), font_size=int(BUTTON_FONT_SIZE / 2))
+		sel_music_track.set_margin(0, self.button_size[1] + free_space - sel_music_track.get_height())
+		slider_music_vol = self.submenu_options.add.range_slider("Music volume", self.music_volume, (0, 1), 0.01, rangeslider_id="MusicVolumeSlider", range_text_value_enabled=False, slider_text_value_enabled=False, value_format=lambda x: str(int(x * 100)), onchange=self.change_music_volume)
+		slider_music_vol.set_margin(0, self.button_size[1] + free_space - slider_music_vol.get_height())
+		slider_sound_vol = self.submenu_options.add.range_slider("Sound volume", self.sound_volume, (0, 1), 0.01, rangeslider_id="SoundVolumeSlider", range_text_value_enabled=False, slider_text_value_enabled=False, value_format=lambda x: str(int(x * 100)), onchange=self.change_sound_volume)
+		slider_sound_vol.set_margin(0, self.button_size[1] + free_space - slider_sound_vol.get_height())
+		sel_bg = self.submenu_options.add.selector("Background: ", BG_ITEMS, margin=(0, free_space), font_size=int(BUTTON_FONT_SIZE / 2))
+		sel_bg.set_margin(0, self.button_size[1] + free_space - sel_bg.get_height())
+		button_back = self.submenu_options.add.button("Back", self.click_on_back_button, align=pygame_menu.locals.ALIGN_CENTER)
+		button_back.set_margin(0, self.button_size[1] + free_space - button_back.get_height())
+		self.submenu_options.center_content()
+
 
 
 
@@ -234,19 +255,16 @@ class StartMenu:
 		# self.level_previews = [pygame.transform.scale(pygame.image.load(FILENAME_ROOT_LVL_PREV.format(str(i))).convert_alpha(), ) for i in range(1)]
 		# rest
 		self.clock = pygame.time.Clock()
-		pygame.mixer_music.load(FILENAME_TITLE_THEME)
-		pygame.mixer_music.play()
+		self.play_music_track(0)
 		self.main_surface.blit(self.bg_img, (0, 0))
-		# Test - Press any key text
 		msg_font = pygame.font.SysFont("Snake Chan", 40)
 		msg_rendered = msg_font.render("Press any key", True, WHITE)
 		self.main_surface.blit(msg_rendered, msg_rendered.get_rect(center=(self.main_surface.get_rect().centerx, 0.95 * self.main_surface.get_height())))
-		# End test
 		pygame.display.update()
 
 	def slide_menu_in(self) -> None:
 		"""Slide the menu in from the left edge"""
-		speed = 5
+		speed = 10
 		cur_topleft = (-self.menu_rect.w, self.menu_rect.top)
 		while cur_topleft[0] <= 0:
 			self.main_surface.blit(self.bg_img, (0, 0))
@@ -262,45 +280,49 @@ class StartMenu:
 
 	def handle_events(self) -> bool:
 		"""Handle the events in the start menu. Returns True if the user starts a new game or False if they want to exit"""
-		# global BLACK_TP
 		button_pushed = False
 		while not self.start_game and not self.exit:
-			for event in pygame.event.get():
-				if event.type == pygame.MOUSEMOTION and not button_pushed:
-					# Check for hovering over buttons
-					prev_pos = utils.subtract_tuples(event.pos, event.rel)
-					self.button_group.collide_update_img(prev_pos, self.button_imgs[ButtonState.NORMAL], self.buttons_surf)
-					self.button_group.collide_update_img(event.pos, self.button_imgs[ButtonState.HOVERED], self.buttons_surf)
-				if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-					# Check for click on button
-					self.button_group.collide_update_img(event.pos, self.button_imgs[ButtonState.PUSHED], self.buttons_surf)
-					button_pushed = True
-				if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-					# Execute on click function if cursor is on a button
-					self.button_group.collide_update_img(event.pos, self.button_imgs[ButtonState.NORMAL], self.buttons_surf)
-					self.button_group.collide_click(event.pos, self.buttons_surf)
-					button_pushed = False
-				# if event.type == pygame.KEYDOWN and event.key == pygame.K_y:
-				# 	self.bg_img.fill((100, 100, 100, 0), special_flags=pygame.BLEND_RGBA_SUB)
-			self.clock.tick(FPS)
+			events = pygame.event.get()
+			if self.submenu_options.is_enabled():
+				self.submenu_options.update(events)
+			else:
+				for event in events:
+					if event.type == pygame.MOUSEMOTION and not button_pushed:
+						# Check for hovering over buttons
+						prev_pos = utils.subtract_tuples(event.pos, event.rel)
+						self.button_group.collide_update_img(prev_pos, self.button_imgs[ButtonState.NORMAL], self.buttons_surf)
+						self.button_group.collide_update_img(event.pos, self.button_imgs[ButtonState.HOVERED], self.buttons_surf)
+					if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+						# Check for click on button
+						self.button_group.collide_update_img(event.pos, self.button_imgs[ButtonState.PUSHED], self.buttons_surf)
+						button_pushed = True
+					if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+						# Execute on click function if cursor is on a button
+						self.button_group.collide_update_img(event.pos, self.button_imgs[ButtonState.NORMAL], self.buttons_surf)
+						self.button_group.collide_click(event.pos, self.buttons_surf)
+						button_pushed = False
 			self.update_display()
+			self.clock.tick(FPS)
 		return self.start_game
-		# Fade out
-		# pygame.mixer_music.fadeout(FADE_MS)
-		# color_fade_steps = 10
-		# fade_cnt = 0
-		# # import time
-		# fading_fps = 255 / color_fade_steps * 1000 / FADE_MS
-		# # start = time.perf_counter()
-		# while fade_cnt * color_fade_steps <= 255:
-		# 	self.bg_img.fill((color_fade_steps, color_fade_steps, color_fade_steps, 0), special_flags=pygame.BLEND_RGBA_ADD)
-		# 	self.menu_surface.blit(self.bg_img, (0, 0))
-		# 	self.clock.tick(fading_fps)
-		# 	pygame.display.update()
-		# 	fade_cnt += 1
-		# end = time.perf_counter()
-		# diff = end - start
-		# print("Time: " + str(diff))
+
+	def handle_submenu_options(self):
+		"""Handle the submenu for the options"""
+		self.submenu_options.enable()
+		# menu = pygame_menu.Menu("Options", self.menu_rect.w, self.menu_rect.h, theme=pygame_menu.themes.THEME_BLUE)
+		# menu.add.text_input("Name: ", default="Kokosnuss")
+		# menu.add.range_slider("Music volume", 100, (0, 100), 1, rangeslider_id="MusicVolumeSlider", value_format=lambda x: str(int(x)), onchange=self.change_music_volume)
+		# menu.add.button("Back", pygame_menu.events.CLOSE)
+		# menu.mainloop(self.menu_surf)
+		pass
+
+	def change_music_volume(self, new_volume: float) -> None:
+		"""Change the music volume. The input param new_volume must be between 0.0 and 1.0."""
+		pygame.mixer_music.set_volume(new_volume)
+		self.music_volume = new_volume
+
+	def change_sound_volume(self, new_volume: float) -> None:
+		"""Change the sound volume. The input param new_volume must be between 0.0 and 1.0."""
+		self.sound_volume = new_volume
 
 	def click_on_new_game_button(self) -> None:
 		"""Start a new game"""
@@ -314,20 +336,37 @@ class StartMenu:
 		pass
 
 	def click_on_options_button(self) -> None:
-		pass
+		self.handle_submenu_options()
 
 	def click_on_exit_button(self) -> None:
 		"""Exit the application"""
 		self.start_game = False
 		self.exit = True
 
+	def click_on_back_button(self, *args, **kwargs) -> None:
+		self.submenu_options.disable()
+
+	def change_music_track(self, sel_item_and_index, sel_value, **kwargs) -> None:
+		self.play_music_track(sel_value)
+		self.cur_track_idx = sel_value
+
+	def play_music_track(self, track_index: int) -> None:
+		"""Change the music track and play it"""
+		pygame.mixer_music.load(FILENAMES_MUSIC_TRACKS[track_index])
+		pygame.mixer_music.set_volume(self.music_volume)
+		pygame.mixer_music.play(loops=-1)
+
 	def update_display(self) -> None:
 		"""Display the current state on the screen"""
 		self.main_surface.blit(self.bg_img, (0, 0))
-		self.button_group.draw(self.buttons_surf)
 		# self.menu_surf.blit(self.side_bar_img, self.side_bar_rect)
-		for rect, text in zip(self.button_rects, self.button_texts_rend):
-			self.buttons_surf.blit(text, text.get_rect(center=rect.center))
+		self.button_group.draw(self.buttons_surf)
+		pygame.draw.rect(self.main_surface, RED, self.submenu_options.get_rect(), width=5)
+		if self.submenu_options.is_enabled():
+			self.submenu_options.draw(self.main_surface)
+		else:
+			for rect, text in zip(self.button_rects, self.button_texts_rend):
+				self.buttons_surf.blit(text, text.get_rect(center=rect.center))
 		self.main_surface.blit(self.menu_frame_img, self.menu_rect)
 		# pygame.draw.rect(self.main_surface, RED, self.menu_rect, width=1)
 		# pygame.draw.rect(self.menu_surf, GREY, self.side_bar_rect, width=1)
@@ -345,3 +384,5 @@ class StartMenu:
 		# 		surf.blit(cur_key_rendered, cur_key_rendered.get_rect(center=rect.center))
 		# 	surf.blit(self.snake_imgs[color], self.snake_imgs[color].get_rect(center=self.snake_color_rect.center))
 		pygame.display.update()
+
+

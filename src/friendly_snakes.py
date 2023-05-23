@@ -621,7 +621,7 @@ class Graphics:
 					if snake.is_drunk > 0:
 						cur_frame_id = self.drunk_anim.num_frames - snake.is_drunk
 						cur_frame = self.drunk_anim.pygame_frames[cur_frame_id]
-						self.map_surface.blit(pygame.transform.rotate(cur_frame, ROTATIONS_STRAIGHT[head_orientation]), screen_pos)
+						self.map_surface.blit(pygame.transform.rotate(cur_frame, ROTATIONS_STRAIGHT[head_orientation] % 180), screen_pos)
 				elif idx == len(snake.pos) - 1 and snake.color in self.snake_parts:
 					# snake tail
 					tail_orientation = utils.subtract_tuples_int(snake.pos[idx - 1], pos)
