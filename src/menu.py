@@ -204,37 +204,22 @@ class StartMenu:
 		self.cur_bg_idx = 0
 		buttons_offset = self.buttons_surf.get_abs_offset()
 		self.submenu_options = pygame_menu.Menu("Options", self.buttons_area_rect.w, self.buttons_area_rect.h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=self.menu_theme)
-		# self.submenu_options = pygame_menu.Menu("Options", self.menu_rect.w, self.menu_rect.h, enabled=False, theme=self.menu_theme)
-		# self.submenu_options.add.range_slider("Music volume", self.music_volume, (0, 1), 0.01, rangeslider_id="MusicVolumeSlider", value_format=lambda x: str(int(x * 100)), onchange=self.change_music_volume, margin=(0, free_space))
-		# self.submenu_options.add.range_slider("Sound volume", self.sound_volume, (0, 1), 0.01, rangeslider_id="SoundVolumeSlider", value_format=lambda x: str(int(x * 100)), onchange=self.change_sound_volume, margin=(0, free_space))
 		slider_music_vol = self.submenu_options.add.range_slider("Music volume:", self.music_volume, (0, 1), 0.01, rangeslider_id="MusicVolumeSlider", range_text_value_enabled=False, slider_text_value_enabled=False, value_format=lambda x: str(int(x * 100)), onchange=self.change_music_volume)
-		# slider_music_vol.set_background_color(COLOR_WIDGETS[WidgetState.NORMAL], (0, max(int((slider_music_vol.get_height() - self.button_size[1]) / 2), 0)))
-		# slider_music_vol.set_margin(0, self.button_size[1] + free_space - slider_music_vol.get_height())
 		slider_sound_vol = self.submenu_options.add.range_slider("Sound volume:", self.sound_volume, (0, 1), 0.01, rangeslider_id="SoundVolumeSlider", range_text_value_enabled=False, slider_text_value_enabled=False, value_format=lambda x: str(int(x * 100)), onchange=self.change_sound_volume)
-		# slider_sound_vol.set_margin(0, self.button_size[1] + free_space - slider_sound_vol.get_height())
 		sel_music_track = self.submenu_options.add.dropselect("Music Track:", MUSIC_TRACK_ITEMS, default=0, placeholder=MUSIC_TRACK_ITEMS[0][0], placeholder_add_to_selection_box=False)
-		# sel_music_track.set_margin(0, self.button_size[1] + free_space - sel_music_track.get_height())
 		sel_bg = self.submenu_options.add.dropselect("Background:", BG_ITEMS, default=0, placeholder=BG_ITEMS[0][0], placeholder_add_to_selection_box=False)
-		# sel_bg.set_margin(0, self.button_size[1] + free_space - sel_bg.get_height())
-		# first_inflate = max(int(self.button_size[1] - slider_music_vol.get_height()), 0)
 		button_back = self.submenu_options.add.button("Back", self.click_on_back_button)
 		for wdg in [slider_music_vol, slider_sound_vol, sel_music_track, sel_bg, button_back]:
 			wdg.set_padding(0)
-			# wdg.set_background_color(COLOR_WIDGETS[WidgetState.NORMAL], (0, max(int(self.button_size[1] - wdg.get_height()), 0)))
 			wdg.set_onmouseover(self.mouse_over_widget)
 			wdg.set_onmouseleave(self.mouse_leave_widget)
 			wdg.set_selection_effect()
-			wdg.set_font(self.button_font, int(BUTTON_FONT_SIZE), WHITE, WHITE, WHITE, WHITE, None, True)
+			wdg.set_font(self.button_font, int(BUTTON_FONT_SIZE * self.scaling_factor), WHITE, WHITE, WHITE, WHITE, None, True)
 			if wdg is button_back:
 				wdg_set_background(wdg, self.button_base_imgs[WidgetState.NORMAL], self.button_size)
 			else:
 				wdg_set_background(wdg, COLOR_WIDGETS[WidgetState.NORMAL], self.button_size)
 				wdg.set_border(0, WHITE)
-		# button_back.set_onmouseover(self.mouse_over_widget)
-		# button_back.set_onmouseleave(self.mouse_leave_widget)
-		# button_back.set_selection_effect()
-		# button_back.set_font(self.button_font, int(BUTTON_FONT_SIZE), WHITE, WHITE, WHITE, WHITE, None, True)
-		# wdg_set_background(button_back, self.button_base_imgs[WidgetState.NORMAL], self.button_size)
 
 		# slider_music_vol = self.submenu_options.add.range_slider("", self.music_volume, (0, 1), 0.01,
 		# 														 rangeslider_id="MusicVolumeSlider",

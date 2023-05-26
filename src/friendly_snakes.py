@@ -149,7 +149,7 @@ class Level:
 		for k, v in self.item_rates.items():
 			self.items.extend([utils.string_to_object(k)] * v)
 
-	def get_start_pos(self, map_str: [str]):
+	def get_start_pos(self, map_str: [str]) -> [[(int, int)]]:
 		start_pos = []
 		sep = ','
 		for row, line in enumerate(map_str):
@@ -191,15 +191,15 @@ class Snake:
 		return self._pos
 
 	@pos.setter
-	def pos(self, new_pos):
+	def pos(self, new_pos: [(int, int)]) -> None:
 		"""Update head, tail and orientation together with pos"""
 		self._pos = new_pos
 		self.head = new_pos[0]
 		self.tail = new_pos[-1]
 		self.orientation = utils.subtract_tuples(self.head, self.pos[1])
 		self.is_growing = max(self.is_growing - 1, 0)
-		if self.spits_fire > 0:
-			self.spit_fire_posis = utils.get_next_squares(self.head, self.orientation, SPIT_FIRE_RANGE)
+		# if self.spits_fire > 0:
+		# 	self.spit_fire_posis = utils.get_spit_fire_squares(self.head, self.orientation, SPIT_FIRE_RANGE, _map)
 
 	def update_orientation(self, key) -> bool:
 		"""Update the orientation based on the pressed key. Return True if the pressed key belonged to a snake"""
@@ -218,9 +218,9 @@ class Snake:
 		"""Adjust the speed of the snake by multiplying it with the given factor"""
 		self.speed = max(MIN_SNAKE_SPEED, min(int(factor * self.speed), MAX_SNAKE_SPEED))
 
-	def update_counting(self) -> [(int, int)]:
-		"""Handle reoccurring updates. Returns a list of dangerous squares (e.g. ones where fire is spit)"""
-		dang_squares = []
+	def update_counting(self) -> bool:
+		"""Handle reoccurring updates. Returns True if the spit fire posis need to be updated"""
+		update_spit_fire_posis = False
 		# Check drunk countdown
 		if self.is_drunk > 1:
 			self.is_drunk -= 1
@@ -230,12 +230,14 @@ class Snake:
 		if self.piquancy_growing > 1:
 			self.piquancy_growing -= 1
 		elif self.piquancy_growing == 1:
-			dang_squares.extend(self.spit_fire())
+			self.spit_fire()
+			update_spit_fire_posis = True
 		if self.spits_fire > 1:
 			self.spits_fire -= 1
 		elif self.spits_fire == 1:
 			self.release_fire()
-		return dang_squares
+			update_spit_fire_posis = True
+		return update_spit_fire_posis
 
 	def get_drunk(self) -> None:
 		"""Handle the snake getting drunk"""
@@ -258,12 +260,12 @@ class Snake:
 		"""Handle the snake eating a chili"""
 		self.piquancy_growing = max(self.piquancy_growing, PIQUANCY_GROWING_DURATION * REOCC_PER_SEC)
 
-	def spit_fire(self) -> [(int, int)]:
-		"""Handle the piquancy countdown running out. Returns a list of dangerous squares"""
+	def spit_fire(self) -> None:
+		"""Handle the piquancy countdown running out"""
 		self.piquancy_growing = 0
 		self.spits_fire = max(self.spits_fire, SPIT_FIRE_DURATION * REOCC_PER_SEC)
-		self.spit_fire_posis = utils.get_next_squares(self.head, self.orientation, SPIT_FIRE_RANGE)
-		return self.spit_fire_posis
+		# self.spit_fire_posis = utils.get_spit_fire_squares(self.head, self.orientation, SPIT_FIRE_RANGE)
+		# return self.spit_fire_posis
 
 	def release_fire(self):
 		"""Stop the snake spitting fire"""
@@ -342,11 +344,12 @@ class Game:
 				elif event.type == REOCC_TIMER and not crashed:
 					# update all counting game elements
 					self.update_counting()
-					threatened_squares = []
+					# threatened_squares = []
 					for snake in self.snakes:
-						threatened_squares.extend(snake.update_counting())
-					crashed_squares = self.is_snake_on_squares(threatened_squares)
-					self.crashes.extend([(pos, pos) for pos in crashed_squares])
+						if snake.update_counting():
+							self.update_spit_fire_posis(snake)
+					# crashed_squares = self.is_snake_on_squares(threatened_squares)
+					# self.crashes.extend([(pos, pos) for pos in crashed_squares])
 				# Update display
 				if snakes_to_update:
 					for item in self.update_snakes(snakes_to_update):
@@ -361,7 +364,7 @@ class Game:
 					crashed = True
 				self.clock.tick(FPS)
 
-	def update_snakes(self, snakes_to_upd: []) -> [utils.Objects]:
+	def update_snakes(self, snakes_to_upd: [Snake]) -> [utils.Objects]:
 		"""Update the position of the snakes. Returns a list of objects that have been eaten"""
 		new_posis = []
 		remaining_posis = [snake.pos for snake in self.snakes if snake not in snakes_to_upd]
@@ -371,8 +374,6 @@ class Game:
 		# update snake positions locally and check for collisions with obstacles
 		for snake in snakes_to_upd:
 			new_square = utils.add_tuples([snake.head, snake.orientation])
-			if utils.get_next_squares(new_square, snake.orientation, 2)[-1] in snake.pos:
-				pass
 			obj_at_new_pos = self.level.map[new_square[0]][new_square[1]]
 			match obj_at_new_pos:
 				case obj if obj in utils.Hurting:
@@ -400,7 +401,9 @@ class Game:
 			new_snake_pos = [new_square] + (snake.pos if snake.is_growing > 0 else snake.pos[:-1])
 			new_posis.append(new_snake_pos)
 			if snake.spits_fire:
-				new_spit_fire_posis.append(utils.get_next_squares(new_snake_pos[0], utils.subtract_tuples(new_snake_pos[0], new_snake_pos[1]), SPIT_FIRE_RANGE))
+				new_spit_fire_posis.append(utils.get_spit_fire_squares(new_snake_pos[0], utils.subtract_tuples(new_snake_pos[0], new_snake_pos[1]), SPIT_FIRE_RANGE, self.level.map))
+			else:
+				new_spit_fire_posis.append([])
 		# Check for crashes with same snake
 		self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos in new_posis if new_pos[0] in new_pos[1:]])
 		# Check for crashes with other snakes
@@ -410,10 +413,11 @@ class Game:
 		self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos in new_posis if new_pos[0] in exploding_squares])
 		# Update real snake positions if no crash happened
 		if not self.crashes:
-			for snake, new_pos in zip(snakes_to_upd, new_posis):
+			for snake, new_pos, new_spit_fire_pos in zip(snakes_to_upd, new_posis, new_spit_fire_posis):
 				self.free_squares |= {snake.pos[-1]} if snake.pos[-1] != new_pos[-1] else set()
 				self.free_squares -= {new_pos[0]}
 				snake.pos = new_pos
+				snake.spit_fire_posis = new_spit_fire_pos
 		# Check for crashes by snakes getting burned (only after the snake posis got updated, so that the new posis
 		# incl. the new fire spit gets drawn on the screen)
 		fire_posis = new_spit_fire_posis + rem_spit_fire_posis
@@ -504,6 +508,13 @@ class Game:
 	def create_bomb_dict(self) -> {(int, int): int}:
 		return {pos: cntdwn for pos, (cntdwn, orientation) in self.bombs.items()}
 
+	def update_spit_fire_posis(self, snake: Snake):
+		"""Updates the spit fire posis for the given snake"""
+		if snake.spits_fire > 0:
+			snake.spit_fire_posis = utils.get_spit_fire_squares(snake.pos[0], snake.orientation, SPIT_FIRE_RANGE, self.level.map)
+		else:
+			snake.spit_fire_posis = []
+
 	def show_map(self):
 		is_running = True
 		while is_running:
@@ -578,7 +589,6 @@ class Graphics:
 		self.main_surface.blit(self.bg, (0, 0))
 		# Draw level
 		wall_color = GREY
-		# exploding_squares = [(center[0] - 1 + i, center[1] - 1 + j) for center in explosions for i in range(3) for j in range(3)]
 		for row, obj_row in enumerate(level.map):
 			for col, obj in enumerate(obj_row):
 				grid_pos = (row, col)
@@ -589,21 +599,16 @@ class Graphics:
 					cur_frame_id = self.bomb_anim.num_frames - bombs[grid_pos]
 					cur_frame = self.bomb_anim.pygame_frames[cur_frame_id]
 					self.map_surface.blit(cur_frame, screen_pos)
-					# if bombs[(row, col)] == 1:
-					# 	self.explosions[screen_pos] = -1
 				elif obj == utils.Objects.EXPLOSION:
 					# Do nothing here, explosions are handled seperately later (so that for explosions at the edge,
 					# the explosions are only drawn after the wall has been drawn)
 					pass
 				elif obj != utils.Objects.NONE:
 					self.map_surface.blit(self.items[obj], screen_pos)
-		# # Draw explosions
+		# Draw explosions
 		for grid_pos in explosions:
 			screen_pos = self.grid_to_screen_pos(grid_pos)
 			cur_frame_id = self.explosion_anim.num_frames - explosions[grid_pos]
-			# FS-35: There's a weird bug with the first frame of the animation showing in white instead of colored,
-			# so as a workaround we use the 2nd frame twice
-			# cur_frame_id = max(cur_frame_id, 1)
 			cur_frame = self.explosion_anim.pygame_frames[cur_frame_id]
 			self.map_surface.blit(cur_frame, utils.subtract_tuples(screen_pos, self.square_size))
 		# Draw snakes
@@ -630,9 +635,6 @@ class Graphics:
 					# snake body
 					orientation_front = utils.subtract_tuples_int(snake.pos[idx - 1], pos)
 					orientation_back = utils.subtract_tuples_int(pos, snake.pos[idx + 1])
-					# snake_part_idx = utils.SnakeParts.BODY_STRAIGHT.value if orientation_front == orientation_back else utils.SnakeParts.BODY_CORNER.value
-					# rotation = ROTATIONS_STRAIGHT[orientation_front] if orientation_front == orientation_back else \
-					# ROTATIONS_CORNER[(orientation_front, orientation_back)]
 					if orientation_front == orientation_back:
 						snake_part_idx = utils.SnakeParts.BODY_STRAIGHT.value if orientation_front == orientation_back else utils.SnakeParts.BODY_CORNER.value
 						rotation = ROTATIONS_STRAIGHT[orientation_front] if orientation_front == orientation_back else ROTATIONS_CORNER[(orientation_front, orientation_back)]
@@ -645,7 +647,12 @@ class Graphics:
 			# Draw spit fire
 			if snake.spit_fire_posis:
 				screen_pos = self.grid_to_screen_pos(snake.spit_fire_posis[0 if head_orientation in [ORIENT_RIGHT, ORIENT_DOWN] else -1])
-				self.map_surface.blit(pygame.transform.rotate(self.fire, ROTATIONS_STRAIGHT[head_orientation]), screen_pos)
+				# The spit fire range might be cut because of obstacles, so we have to check for that and only show
+				# the image partially in that case
+				factor = len(snake.spit_fire_posis) / SPIT_FIRE_RANGE
+				trg_area = (0, 0, factor * self.fire.get_width(), self.fire.get_height())
+				trg_image = self.fire.subsurface(trg_area)
+				self.map_surface.blit(pygame.transform.rotate(trg_image, ROTATIONS_STRAIGHT[head_orientation]), screen_pos)
 		# Draw crashes
 		radius1 = self.edge_size / 2.0 * 0.7
 		radius2 = self.edge_size / 2.0 * 0.8

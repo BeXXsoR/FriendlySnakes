@@ -104,3 +104,14 @@ def get_tuple_signs(tuple1: tuple[float, ...]) -> tuple[int, ...]:
 def get_next_squares(pos: (int, int), direction: (int, int), num_squares: int) -> [(int, int)]:
 	"""Return the next squares, starting from the given pos in the given direction"""
 	return [add_two_tuples(pos, mult_tuple_to_int(direction, i)) for i in range(1, num_squares + 1)]
+
+
+def get_spit_fire_squares(pos: (int, int), direction: (int, int), num_squares: int, map: [[Objects]]) -> [(int, int)]:
+	"""Return the next squares, starting from the given pos in the given direction,
+	but stop if an undestroyable Object is in the way"""
+	next_squares = get_next_squares(pos, direction, num_squares)
+	for idx, square in enumerate(next_squares):
+		row, col = square
+		if row >= len(map) or col >= len(map[row]) or map[row][col] in Undestroyable:
+			return next_squares[0:idx]
+	return next_squares
