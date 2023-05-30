@@ -1,4 +1,17 @@
-"""A multiplayer cooperative snake game"""
+"""A multiplayer cooperative snake game
+
+import structure:
+
+friendly_snakes
+|-- communicator (incl. the main game loop)
+|	|-- menu
+|	|-- game
+|	|	|-- graphics
+|	|	|	|-- snake
+|	|	|	|-- level
+Additionally, the utils and constants class are widely used and imported in almost every module.
+"""
+
 
 # ----- Imports --------
 import utils
@@ -271,14 +284,6 @@ class Snake:
 		"""Stop the snake spitting fire"""
 		self.spits_fire = 0
 		self.spit_fire_posis = []
-
-
-@dataclass
-class Bomb:
-	"""Class for bomb status"""
-	pos: (int, int)
-	cntdwn: int
-	direction: (int, int)
 
 
 class Game:
