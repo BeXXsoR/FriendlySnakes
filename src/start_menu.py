@@ -1,8 +1,8 @@
-"""Classes for all the menus in the game"""
+"""Module for the start menu class in the friendly snakes package"""
 
 import utils
-from constants import FPS
-from menu import *
+from constants import FPS, WHITE
+from menus import *
 import pygame
 import pygame_menu
 
@@ -17,28 +17,31 @@ TEXTS_BUTTON = {Language.GERMAN: ["Neues Spiel", "Profil wählen", "Steuerung", 
 				Language.ENGLISH: ["New game", "Choose profile", "Controls", "Options", "Exit"]}
 
 
-class StartMenu(Menu):
+# ----- Classes --------
+class StartMainMenu(MainMenu):
+	"""Class for the start menu"""
+
 	def __init__(self, main_surface: pygame.Surface):
 		"""Initialize the start menu"""
-
 		super().__init__(main_surface)
 		# Background
-		self.bg_img = pygame.transform.scale(pygame.image.load(FILENAME_BG).convert_alpha(), self.main_surface.get_size())
+		self.bg_img = pygame.transform.scale(pygame.image.load(FILENAME_BG).convert_alpha(), self.parent_surface.get_size())
 		# Initialize the menu - 1st, define all the areas, rects, images, etc.
-		#   Menu area
-		self.menu_rect = pygame.Rect(utils.mult_tuple_to_int(MENU_FRAME_START, self.scaling_factor), utils.mult_tuple_to_int(MENU_FRAME_SIZE, self.scaling_factor))
-		self.menu_surf = self.main_surface.subsurface(self.menu_rect)
-		self.menu_frame_img = pygame.transform.scale(pygame.image.load(FILENAME_MENU_FRAME).convert_alpha(), self.menu_rect.size)
-		#   Button area inside the menu area
-		self.buttons_area_start = utils.mult_tuple_to_int(BUTTON_AREA_START, self.scaling_factor)
-		self.buttons_area_size = utils.mult_tuple_to_int(BUTTON_AREA_SIZE, self.scaling_factor)
-		self.buttons_area_rect = pygame.Rect(self.buttons_area_start, self.buttons_area_size)
-		self.buttons_surf = self.menu_surf.subsurface(self.buttons_area_rect)
-		#   Buttons inside the button area
-		num_buttons = len(self.button_texts)
-		free_space = int((self.buttons_area_rect.h - num_buttons * self.button_size[1]) / (num_buttons - 1))
-		self.button_rects = [pygame.Rect((0, i * (self.button_size[1] + free_space)), self.button_size) for i in range(num_buttons)]
-		self.button_texts = TEXTS_BUTTON[self.lang]
+		# #   Menu area
+		# self.menu_rect = pygame.Rect(utils.mult_tuple_to_int(MENU_FRAME_START, self.scaling_factor), utils.mult_tuple_to_int(MENU_FRAME_SIZE, self.scaling_factor))
+		# self.menu_surf = self.main_surface.subsurface(self.menu_rect)
+		# self.menu_frame_img = pygame.transform.scale(pygame.image.load(FILENAME_MENU_FRAME).convert_alpha(), self.menu_rect.size)
+		# #   Button area inside the menu area
+		# self.buttons_area_start = utils.mult_tuple_to_int(BUTTON_AREA_START, self.scaling_factor)
+		# self.buttons_area_size = utils.mult_tuple_to_int(BUTTON_AREA_SIZE, self.scaling_factor)
+		# self.buttons_area_rect = pygame.Rect(self.buttons_area_start, self.buttons_area_size)
+		# self.buttons_surf = self.menu_surf.subsurface(self.buttons_area_rect)
+		# #   Buttons inside the button area
+		# self.button_texts = TEXTS_BUTTON[self.lang]
+		# self.button_texts_rend = [self.button_font.render(text, True, WHITE) for text in self.button_texts]
+		# num_buttons = len(self.button_texts)
+		# free_space = int((self.buttons_area_rect.h - num_buttons * self.button_size[1]) / (num_buttons - 1))
+		# self.button_rects = [pygame.Rect((0, i * (self.button_size[1] + free_space)), self.button_size) for i in range(num_buttons)]
 		#   2nd, define the sprites for the objects
 		self.on_click_functions = [self.click_on_new_game_button, self.click_on_profile_button, self.click_on_controls_button, self.click_on_options_button, self.click_on_exit_button]
 		self.buttons = [Clickable(self.button_imgs[WidgetState.NORMAL], rect, func) for rect, func in zip(self.button_rects, self.on_click_functions)]
@@ -65,7 +68,7 @@ class StartMenu(Menu):
 				wdg_set_background(wdg, COLOR_WIDGETS[WidgetState.NORMAL], self.button_size)
 				wdg.set_border(0, WHITE)
 		options_widgets = [slider_music_vol, slider_sound_vol, sel_music_track, sel_bg]
-		block_height = self.button_size[1] + free_space
+		block_height = self.button_size[1] + self.free_space
 		options_frame = self.submenu_options.add.frame_v(self.buttons_area_rect.w, 5 * block_height + OPTIONS_TOP_MARGIN, padding=0)
 		options_frame.pack(self.submenu_options.add.vertical_margin(OPTIONS_TOP_MARGIN))
 		for wdg in options_widgets:
@@ -77,28 +80,48 @@ class StartMenu(Menu):
 		# Start clock and music and display the initial screen
 		self.clock = pygame.time.Clock()
 		self.play_music_track(0)
-		self.main_surface.blit(self.bg_img, (0, 0))
+		self.parent_surface.blit(self.bg_img, (0, 0))
 		msg_font = pygame.font.SysFont("Snake Chan", 40)
 		msg_rendered = msg_font.render("Press any key", True, WHITE)
-		self.main_surface.blit(msg_rendered, msg_rendered.get_rect(center=(self.main_surface.get_rect().centerx, 0.95 * self.main_surface.get_height())))
+		self.parent_surface.blit(msg_rendered, msg_rendered.get_rect(center=(self.parent_surface.get_rect().centerx, 0.95 * self.parent_surface.get_height())))
 		pygame.display.update()
 
 	def set_button_size(self) -> (int, int):
 		"""Return the size of a button"""
 		return utils.mult_tuple_to_int((BUTTON_AREA_SIZE[0], BUTTON_HEIGHT), self.scaling_factor)
 
+	def set_button_area_start_and_size(self) -> ((int, int), (int, int)):
+		"""
+		Return the button area start position and size w.r.t. the benchmark screen
+
+		:return: Tuple containing [0] the button area start position and [1] the button area size
+		"""
+		return utils.mult_tuple_to_int(BUTTON_AREA_START, self.scaling_factor), utils.mult_tuple_to_int(BUTTON_AREA_SIZE, self.scaling_factor)
+
+	def set_menu_area_start_and_size(self) -> ((int, int), (int, int)):
+		"""
+		Return the menu area start position and size w.r.t. the benchmark screen
+
+		:return: Tuple containing [0] the menu area start position and [1] the menu area size
+		"""
+		return utils.mult_tuple_to_int(MENU_FRAME_START, self.scaling_factor), utils.mult_tuple_to_int(MENU_FRAME_SIZE, self.scaling_factor)
+
+	def set_button_texts(self) -> [str]:
+		"""Return the texts for the buttons"""
+		return TEXTS_BUTTON[self.lang]
+
 	def slide_menu_in(self) -> None:
 		"""Slide the menu in from the left edge"""
 		speed = 10
 		cur_topleft = (-self.menu_rect.w, self.menu_rect.top)
 		while cur_topleft[0] <= 0:
-			self.main_surface.blit(self.bg_img, (0, 0))
+			self.parent_surface.blit(self.bg_img, (0, 0))
 			for rect, text in zip(self.button_rects, self.button_texts_rend):
 				button_topleft = utils.add_tuples([cur_topleft, rect.topleft, self.buttons_area_rect.topleft])
 				cur_button_rect = pygame.Rect(button_topleft, self.button_size)
-				self.main_surface.blit(self.button_imgs[WidgetState.NORMAL], button_topleft)
-				self.main_surface.blit(text, text.get_rect(center=cur_button_rect.center))
-			self.main_surface.blit(self.menu_frame_img, cur_topleft)
+				self.parent_surface.blit(self.button_imgs[WidgetState.NORMAL], button_topleft)
+				self.parent_surface.blit(text, text.get_rect(center=cur_button_rect.center))
+			self.parent_surface.blit(self.menu_frame_img, cur_topleft)
 			cur_topleft = (cur_topleft[0] + speed, cur_topleft[1])
 			pygame.display.update()
 		self.update_display()
@@ -128,7 +151,7 @@ class StartMenu(Menu):
 							pushed_button = buttons[0]
 					if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
 						# Execute on click function if cursor is on the pushed button
-						buttons = self.button_group.collide_point(event.pos)
+						buttons = self.button_group.collide_point(event.pos, self.buttons_surf)
 						if buttons and buttons[0] == pushed_button:
 							pushed_button.on_click()
 						self.button_group.update(img=self.button_imgs[WidgetState.NORMAL])
@@ -165,14 +188,14 @@ class StartMenu(Menu):
 
 	def update_display(self) -> None:
 		"""Display the current state on the screen"""
-		self.main_surface.blit(self.bg_img, (0, 0))
+		self.parent_surface.blit(self.bg_img, (0, 0))
 		if self.submenu_options.is_enabled():
-			self.submenu_options.draw(self.main_surface)
+			self.submenu_options.draw(self.parent_surface)
 		else:
 			self.button_group.draw(self.buttons_surf)
 			for rect, text in zip(self.button_rects, self.button_texts_rend):
 				self.buttons_surf.blit(text, text.get_rect(center=rect.center))
-		self.main_surface.blit(self.menu_frame_img, self.menu_rect)
+		self.parent_surface.blit(self.menu_frame_img, self.menu_rect)
 
 		# pygame.draw.rect(self.main_surface, RED, self.submenu_options.get_rect(), width=5)
 		# options_frame_rect = self.submenu_options.get_widget("options_frame").get_rect()

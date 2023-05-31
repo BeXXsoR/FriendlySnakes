@@ -3,7 +3,7 @@
 # ----- Imports --------
 import utils
 import json
-from start_menu import StartMenu
+from start_menu import StartMainMenu
 from game import Game
 from level import Level
 from graphics import Graphics
@@ -19,6 +19,7 @@ FILENAME_ITEM_SOUNDS = {utils.Objects.APPLE: "../res/eat.ogg", utils.Objects.MEL
 FILENAME_CRASH_SOUND = "../res/crash.ogg"
 UPDATE_SNAKES = [pygame.event.custom_type() for _ in range(4)]
 REOCC_TIMER = pygame.event.custom_type()
+
 
 # ----- Classes --------
 class Communicator:
@@ -60,7 +61,7 @@ class Communicator:
 			self.levels.append(Level(level_info))
 
 	def init_start_menu(self):
-		self.start_menu = StartMenu(self.main_surface)
+		self.start_menu = StartMainMenu(self.main_surface)
 		# Wait for user pressing key
 		key_pressed = False
 		while not key_pressed:

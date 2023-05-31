@@ -60,6 +60,4 @@ SNAKE_NAME_FONT_SIZE = 40
 SNAKE_INFO_FONT_SIZE = 40
 BG_ITEMS = [("Desert", 0)]
 MUSIC_TRACK_ITEMS = [("Bells Song", 0)]
-FILENAMES_BUTTON = {WidgetState.NORMAL: "../res/menu_button_normal.png", WidgetState.PUSHED: "../res/menu_button_pushed.png", WidgetState.HOVERED: "../res/menu_button_hovered.png"}
-COLOR_WIDGETS = {WidgetState.NORMAL: (76, 123, 209), WidgetState.HOVERED: (111, 164, 255)}
 # endregion
