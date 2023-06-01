@@ -711,5 +711,4 @@ from communicator import Communicator
 # ----- Main script ----
 if __name__ == "__main__":
 	comm = Communicator()
-	if comm.handle_start_menu():
-		sys.exit(comm.start_game())
+	sys.exit(comm.start())

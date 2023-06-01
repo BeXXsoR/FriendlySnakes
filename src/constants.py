@@ -51,7 +51,7 @@ FILENAME_DRUNK = "../res/drunk.gif"
 FILENAME_PIQU_RISING = "../res/piquancy_rising.gif"
 FILENAME_SPEEDO = "../res/speedo.png"
 FILENAMES_BG = {utils.Backgrounds.DESERT: "../res/bg_desert.png"}
-FILENAME_TITLE_THEME = "../res/title_theme.ogg"
+FILENAMES_MUSIC_TRACKS = ["../res/title_theme.ogg"]
 GROWING_SIZES = {utils.Objects.APPLE: 1, utils.Objects.MELON: 3}
 SPEEDING_FACTORS = {utils.Objects.COFFEE: 2, utils.Objects.TEA: 0.5}
 REOCC_DUR = 250
@@ -60,4 +60,7 @@ SNAKE_NAME_FONT_SIZE = 40
 SNAKE_INFO_FONT_SIZE = 40
 BG_ITEMS = [("Desert", 0)]
 MUSIC_TRACK_ITEMS = [("Bells Song", 0)]
+# benchmark screen: 2560x1440
+BENCHMARK_WIDTH = 2560
+BENCHMARK_HEIGHT = 1440
 # endregion
