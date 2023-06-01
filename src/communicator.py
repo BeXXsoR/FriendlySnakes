@@ -3,7 +3,7 @@
 # ----- Imports --------
 import utils
 import json
-from start_menu import StartMainMenu
+from start_menu import StartMenu
 from game import Game
 from level import Level
 from graphics import Graphics
@@ -61,7 +61,7 @@ class Communicator:
 			self.levels.append(Level(level_info))
 
 	def init_start_menu(self):
-		self.start_menu = StartMainMenu(self.main_surface)
+		self.start_menu = StartMenu(self.main_surface)
 		# Wait for user pressing key
 		key_pressed = False
 		while not key_pressed:
@@ -72,7 +72,7 @@ class Communicator:
 
 	def handle_start_menu(self) -> bool:
 		"""Handle the start menu. Returns True if the user starts a new game or False if they want to exit"""
-		return self.start_menu.handle_events()
+		return self.start_menu.menu_loop()
 
 	def start_game(self):
 		# self.game.show_map()

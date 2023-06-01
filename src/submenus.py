@@ -2,7 +2,7 @@
 
 # ----- Imports --------
 import utils
-from menus import Submenu, WidgetState, FILENAME_MENU_FRAME, BUTTON_FONT_SIZE, FILENAMES_BUTTON
+from menus import Submenu, WidgetState, FILENAME_MENU_FRAME, BUTTON_FONT_SIZE, FILENAMES_BUTTON, FILENAMES_MUSIC_TRACKS
 from constants import WHITE
 import pygame
 import pygame_menu
@@ -29,9 +29,19 @@ def wdg_set_background(widget: pygame_menu.widgets.Widget, bg_color, trg_size: (
 class SubmenuOptions(Submenu):
 	"""Class for the options submenu"""
 
-	def __init__(self, parent_surface: pygame.Surface):
-		"""Initialize the options submenu"""
-		super().__init__(parent_surface)
+	def __init__(self, parent_surface: pygame.Surface, buttons_area_topleft: (int, int), buttons_area_size: (int, int)):
+		"""
+		Initialize the options submenu.
+
+		:param parent_surface: Surface to draw the menu onto.
+		:param buttons_area_topleft: Position of topleft corner of the buttons area in the parent surface.
+		:param buttons_area_size: Size of the buttons area
+		"""
+		super().__init__(parent_surface, buttons_area_topleft, buttons_area_size)
+		self.music_volume = 0.1
+		self.sound_volume = 1
+		self.cur_track_idx = 0
+		self.cur_bg_idx = 0
 		self.menu_base_image = pygame_menu.BaseImage(image_path=FILENAME_MENU_FRAME, drawing_mode=pygame_menu.baseimage.IMAGE_MODE_FILL)
 		self.button_base_imgs = {state: pygame_menu.BaseImage(image_path=FILENAMES_BUTTON[state], drawing_mode=pygame_menu.baseimage.IMAGE_MODE_FILL) for state in WidgetState}
 		self.menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=self.button_font, widget_font_antialias=True, widget_font_color=WHITE)
@@ -54,7 +64,9 @@ class SubmenuOptions(Submenu):
 				wdg_set_background(wdg, COLOR_WIDGETS[WidgetState.NORMAL], self.button_size)
 				wdg.set_border(0, WHITE)
 		options_widgets = [slider_music_vol, slider_sound_vol, sel_music_track, sel_bg]
-		block_height = self.button_size[1] + self.free_space
+		num_buttons = 5
+		free_space = int((self.buttons_area_rect.h - num_buttons * self.button_size[1]) / (num_buttons - 1))
+		block_height = self.button_size[1] + free_space
 		options_frame = self.submenu_options.add.frame_v(self.buttons_area_rect.w, 5 * block_height + OPTIONS_TOP_MARGIN, padding=0)
 		options_frame.pack(self.submenu_options.add.vertical_margin(OPTIONS_TOP_MARGIN))
 		for wdg in options_widgets:
@@ -63,3 +75,39 @@ class SubmenuOptions(Submenu):
 		options_frame.pack(self.submenu_options.add.vertical_margin(0.5 * block_height))
 		options_frame.pack(button_back, align=pygame_menu.locals.ALIGN_CENTER)
 		self.submenu_options.resize(options_frame.get_width(), options_frame.get_height())
+
+	def handle_events(self) -> bool:
+		"""
+		Handle the events in the pygame event queue.
+
+		:return: True if outer loop should be continued, False otherwise
+		"""
+		self.submenu_options.update(pygame.event.get())
+		return self.click_on_back
+
+	def change_music_volume(self, new_volume: float) -> None:
+		"""
+		Change the music volume.
+
+		:param new_volume: New volume level, must be between 0.0 and 1.0.
+		"""
+		pygame.mixer_music.set_volume(new_volume)
+		self.music_volume = new_volume
+
+	def change_sound_volume(self, new_volume: float) -> None:
+		"""
+		Change the sound volume.
+
+		:param new_volume: New volume level, must be between 0.0 and 1.0.
+		"""
+		self.sound_volume = new_volume
+
+	def change_music_track(self, sel_item_and_index, sel_value, **kwargs) -> None:
+		"""Change the music track. Standard callback method for the respective selectors in a menu.
+
+		:param sel_item_and_index: part of the standard callback interface, not used here
+		:param sel_value: Index of the chosen track
+		:param kwargs: part of the standard callback interface, not used here
+		"""
+		utils.play_music_track(FILENAMES_MUSIC_TRACKS[sel_value], self.music_volume)
+		self.cur_track_idx = sel_value

@@ -1,7 +1,10 @@
 """A helper module"""
 
 import itertools
+import pygame
 from enum import Enum, Flag, auto
+
+pygame.init()
 
 
 class Backgrounds(Enum):
@@ -115,3 +118,15 @@ def get_spit_fire_squares(pos: (int, int), direction: (int, int), num_squares: i
 		if row >= len(map) or col >= len(map[row]) or map[row][col] in Undestroyable:
 			return next_squares[0:idx]
 	return next_squares
+
+
+def play_music_track(filename: str, volume: float = 1.0) -> None:
+	"""
+	Change the music track and play it.
+
+	:param filename: Filename of the music track
+	:param volume: Music volume
+	"""
+	pygame.mixer_music.load(filename)
+	pygame.mixer_music.set_volume(volume)
+	pygame.mixer_music.play(loops=-1)
