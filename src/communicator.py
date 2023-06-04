@@ -43,24 +43,25 @@ class Communicator:
         for controls in snake_controls:
             self.snake_controls_all.extend(controls.keys())
         self.main_surface = pygame.display.set_mode((0, 0))
+        self.lang = utils.Language.ENGLISH
         self.levels = []
         self.read_level_infos()
-        # pygame.mixer_music.load(FILENAME_TITLE_THEME)
-        # pygame.mixer_music.play(fade_ms=2000)
+        self.level = self.levels[0]
         utils.play_music_track(FILENAMES_MUSIC_TRACKS[0], 0.1)
         self.scaling_factor = self.main_surface.get_height() / BENCHMARK_HEIGHT
         self.start_bg_img = pygame.transform.scale(pygame.image.load(FILENAME_START_BG).convert_alpha(), self.main_surface.get_size())
         self.start_menu = Menu(self.main_surface,
                                pygame.Rect(utils.mult_tuple_to_int(START_MENU_TOPLEFT, self.scaling_factor), utils.mult_tuple_to_int(START_MENU_SIZE, self.scaling_factor)),
                                self.start_bg_img,
-                               self.scaling_factor)
+                               self.scaling_factor,
+                               self.lang)
         self.pause_menu = Menu(self.main_surface,
                                pygame.Rect(utils.mult_tuple_to_int(PAUSE_MENU_TOPLEFT, self.scaling_factor), utils.mult_tuple_to_int(PAUSE_MENU_SIZE, self.scaling_factor)),
                                None,
-                               self.scaling_factor)
+                               self.scaling_factor,
+                               self.lang)
         self.set_start_screen()
         self.init_start_menu()
-        self.level = self.levels[0]
         # self.game = Game(snake_names, snake_colors, snake_controls, self.level, self.main_surface)
         self.game = Game(snake_names[:1], snake_colors[:1], snake_controls[:1], self.level, self.main_surface)
         # self.game = Game(snake_names[:2], snake_colors[:2], snake_controls[:2], self.level, self.main_surface)

@@ -7,6 +7,11 @@ from enum import Enum, Flag, auto
 pygame.init()
 
 
+class Language(Enum):
+	GERMAN = 0
+	ENGLISH = 1
+
+
 class Backgrounds(Enum):
 	NONE = 0
 	DESERT = 1
@@ -48,15 +53,24 @@ Undestroyable = Objects.WALL
 def string_to_object(string: str) -> Objects:
 	"""Translate a string to the respective Object (wall etc.)"""
 	match string:
-		case "w": return Objects.WALL
-		case "a": return Objects.APPLE
-		case "m": return Objects.MELON
-		case "c": return Objects.COFFEE
-		case "t": return Objects.TEA
-		case "b": return Objects.BEER
-		case "o": return Objects.BOMB
-		case "h": return Objects.CHILI
-		case _: return Objects.NONE
+		case "w":
+			return Objects.WALL
+		case "a":
+			return Objects.APPLE
+		case "m":
+			return Objects.MELON
+		case "c":
+			return Objects.COFFEE
+		case "t":
+			return Objects.TEA
+		case "b":
+			return Objects.BEER
+		case "o":
+			return Objects.BOMB
+		case "h":
+			return Objects.CHILI
+		case _:
+			return Objects.NONE
 
 
 def strings_to_objects(strings: [str], sep: str = ",") -> [[Objects]]:
@@ -130,3 +144,9 @@ def play_music_track(filename: str, volume: float = 1.0) -> None:
 	pygame.mixer_music.load(filename)
 	pygame.mixer_music.set_volume(volume)
 	pygame.mixer_music.play(loops=-1)
+
+
+def get_char_for_pygame_key(pygame_key: int) -> str:
+	"""Transform an int representing a pygame key constant to the corresponding char"""
+	return "g"
+
