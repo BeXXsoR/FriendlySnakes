@@ -18,12 +18,12 @@ class Snake:
 		self.name = name
 		self.idx = idx
 		self.color = color
+		self.score = 0
 		# controls is a dict for the inputs that control the snake. Keys are the keyboard keys as pygame constants,
 		# values are the orientations (as (int, int) tuples)
 		self.controls = controls
 		self._pos = None
 		self.head = None
-		self.tail = None
 		self.orientation = None
 		self.speed = 4
 		self.is_growing = 0
@@ -41,7 +41,6 @@ class Snake:
 		"""Update head, tail and orientation together with pos"""
 		self._pos = new_pos
 		self.head = new_pos[0]
-		self.tail = new_pos[-1]
 		self.orientation = utils.subtract_tuples(self.head, self.pos[1])
 		self.is_growing = max(self.is_growing - 1, 0)
 

@@ -29,7 +29,7 @@ class Level:
 				self.map = utils.strings_to_objects(v)
 				self.start_pos = self.get_start_pos(v, ",")
 			elif k == "bg":
-				self.bg = utils.Objects[v]
+				self.bg = utils.Backgrounds[v]
 			else:
 				setattr(self, k, v)
 		self.num_cols = len(self.map)

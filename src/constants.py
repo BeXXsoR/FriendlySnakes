@@ -4,6 +4,7 @@ import utils
 
 # ----- Constants ------
 # region Constants
+# --- Colors ---
 GREEN = (0, 153, 0)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
@@ -14,7 +15,8 @@ CYAN = (51, 255, 255)
 ORANGE = (255, 128, 0)
 GREY = (192, 192, 192)
 BLACK = (0, 0, 0)
-BG_COLOR = WHITE
+BG_COLOR = (167, 226, 247)
+# --- Game parameters ---
 ORIENT_UP = (-1, 0)
 ORIENT_DOWN = (1, 0)
 ORIENT_LEFT = (0, -1)
@@ -37,6 +39,12 @@ DRUNK_DURATION = 10
 PIQUANCY_GROWING_DURATION = 3
 SPIT_FIRE_DURATION = 2
 SPIT_FIRE_RANGE = 2
+GROWING_SIZES = {utils.Objects.APPLE: 1, utils.Objects.MELON: 3}
+SPEEDING_FACTORS = {utils.Objects.COFFEE: 2, utils.Objects.TEA: 0.5}
+REOCC_DUR = 250
+REOCC_PER_SEC = int(1000 / REOCC_DUR)
+ITEM_SCORES = {utils.Objects.APPLE: 3, utils.Objects.MELON: 6, utils.Objects.COFFEE: 9, utils.Objects.TEA: 0, utils.Objects.BEER: 7, utils.Objects.CHILI: 5}
+# --- Filenames ---
 FILENAME_SNAKE_PARTS = {GREEN: ["../res/snake_head_green.png", "../res/snake_body_straight_green.png", "../res/snake_body_corner_green.png", "../res/snake_tail_green.png"],
 						BLUE: ["../res/snake_head_blue.png", "../res/snake_body_straight_blue.png", "../res/snake_body_corner_blue.png", "../res/snake_tail_blue.png"],
 						CYAN: ["../res/snake_head_cyan.png", "../res/snake_body_straight_cyan.png", "../res/snake_body_corner_cyan.png", "../res/snake_tail_cyan.png"],
@@ -52,12 +60,10 @@ FILENAME_PIQU_RISING = "../res/piquancy_rising.gif"
 FILENAME_SPEEDO = "../res/speedo.png"
 FILENAMES_BG = {utils.Backgrounds.DESERT: "../res/bg_desert.png"}
 FILENAMES_MUSIC_TRACKS = ["../res/title_theme.ogg"]
-GROWING_SIZES = {utils.Objects.APPLE: 1, utils.Objects.MELON: 3}
-SPEEDING_FACTORS = {utils.Objects.COFFEE: 2, utils.Objects.TEA: 0.5}
-REOCC_DUR = 250
-REOCC_PER_SEC = int(1000 / REOCC_DUR)
+# --- Display parameters ---
 SNAKE_NAME_FONT_SIZE = 40
 SNAKE_INFO_FONT_SIZE = 40
+SCORE_FONT_SIZE = 40
 BG_ITEMS = [("Desert", 0)]
 MUSIC_TRACK_ITEMS = [("Bells Song", 0)]
 # benchmark screen: 2560x1440

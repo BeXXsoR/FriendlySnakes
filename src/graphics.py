@@ -11,12 +11,17 @@ import pygame
 pygame.init()
 
 
+# ----- Constants -----
+
+
 # ----- Classes --------
 class Graphics:
 	"""The class for displaying all graphics on the screen"""
 
 	def __init__(self, main_surface: pygame.Surface, num_rows: int, num_cols: int):
 		self.main_surface = main_surface
+		self.scaling_factor = self.main_surface.get_height() / BENCHMARK_HEIGHT
+		self.usable_rect = pygame.Rect(utils.mult_tuple_to_int(self.main_surface.get_size(), (1 - MAP_TO_SCREEN_RATIO) / 2), utils.mult_tuple_to_int(self.main_surface.get_size(), MAP_TO_SCREEN_RATIO))
 		self.bg = pygame.transform.scale(pygame.image.load(FILENAMES_BG[utils.Backgrounds.DESERT]).convert_alpha(), self.main_surface.get_size())
 		self.edge_size = int(min(self.main_surface.get_width() * MAP_TO_SCREEN_RATIO / num_cols, self.main_surface.get_height() * MAP_TO_SCREEN_RATIO / num_rows))
 		self.square_size = (self.edge_size, self.edge_size)
@@ -26,7 +31,7 @@ class Graphics:
 		self.map_rect.center = self.main_surface.get_rect().center
 		self.map_surface = self.main_surface.subsurface(self.map_rect)
 		self.square_posis = [[(j * self.edge_size, i * self.edge_size) for j in range(num_cols)] for i in range(num_rows)]
-		# snake status surfaces
+		# Snake status surfaces
 		status_rect_size = (int((MAP_TO_SCREEN_RATIO * self.main_surface.get_width() - self.map_rect.width) / 2), int(self.map_rect.height / 4))
 		status_rect = pygame.rect.Rect((0, 0), status_rect_size)
 		self.snake_status_rects = []
@@ -34,10 +39,9 @@ class Graphics:
 			cur_rect = status_rect.copy()
 			cur_rect.top = self.snake_status_rects[-1].bottom if self.snake_status_rects else self.map_rect.top
 			cur_rect.left = int((1 - MAP_TO_SCREEN_RATIO) / 2 * self.main_surface.get_width())
-			# 	if i % 2 == 0 else self.map_rect.right
 			self.snake_status_rects.append(cur_rect)
 		self.status_surfaces = [self.main_surface.subsurface(rect) for rect in self.snake_status_rects]
-		# Rects inside a snake status surface
+		#   Rects inside a snake status surface
 		num_rows = 6
 		num_cols = 6
 		edge_size = int(min(status_rect.width / num_cols, status_rect.height / num_rows))
@@ -51,6 +55,10 @@ class Graphics:
 		self.snake_drunk_rect = pygame.rect.Rect(self.snake_body_img_rect.bottomleft, rect_size)
 		self.snake_chili_rect = pygame.rect.Rect(self.snake_speed_img_rect.bottomleft, rect_size)
 		self.snake_burger_rects = [pygame.rect.Rect((i * edge_size, self.snake_drunk_rect.bottom), rect_size) for i in range(3)]
+		# Score rect
+		self.score_rect = pygame.rect.Rect((0, 0), (status_rect_size[0] * 0.5, status_rect_size[1]))
+		self.score_rect.topright = self.usable_rect.topright
+		# self.score_surface = self.main_surface.subsurface(self.score_rect)
 		# Prepare images
 		self.items_orig = {obj: pygame.image.load(filename).convert_alpha() for obj, filename in FILENAME_ITEMS.items()}
 		self.items = {obj: pygame.transform.scale(img_orig, self.square_size)
@@ -60,7 +68,6 @@ class Graphics:
 		self.explosion_anim = animations.Animation(FILENAME_EXPLOSION, (3 * self.edge_size, 3 * self.edge_size))
 		self.drunk_anim = animations.Animation(FILENAME_DRUNK, self.square_size)
 		self.piqu_rising_anim = animations.Animation(FILENAME_PIQU_RISING, self.square_size)
-		# self.explosions = {}
 		self.snake_parts_orig = {k: [pygame.image.load(filename).convert_alpha() for filename in v] for k, v in FILENAME_SNAKE_PARTS.items()}
 		self.snake_parts = {k: [pygame.transform.scale(img_orig, self.square_size) for img_orig in v] for k, v in self.snake_parts_orig.items()}
 		status_img_size = utils.mult_tuple_to_int(rect_size, 1)
@@ -68,10 +75,11 @@ class Graphics:
 		self.speedo_img = pygame.transform.scale(pygame.image.load(FILENAME_SPEEDO).convert_alpha(), utils.mult_tuple_to_int(rect_size, 0.8))
 		self.drunk_img = pygame.transform.scale(self.items_orig[utils.Objects.BEER], utils.mult_tuple_to_int(rect_size, 0.8))
 		# Prepare fonts
-		self.snake_name_font = pygame.font.Font(None, SNAKE_NAME_FONT_SIZE)
-		self.snake_info_font = pygame.font.Font(None, SNAKE_INFO_FONT_SIZE)
+		self.snake_name_font = pygame.font.Font(None, int(SNAKE_NAME_FONT_SIZE * self.scaling_factor))
+		self.snake_info_font = pygame.font.Font(None, int(SNAKE_INFO_FONT_SIZE * self.scaling_factor))
+		self.score_font = pygame.font.SysFont("Snake Chan", int(SCORE_FONT_SIZE * self.scaling_factor))
 
-	def update_display(self, level: Level, snakes: [Snake], crashes: [((int, int), (int, int))], bombs: {(int, int): int}, explosions: {(int, int): int}) -> None:
+	def update_display(self, level: Level, snakes: [Snake], crashes: [((int, int), (int, int))], bombs: {(int, int): int}, explosions: {(int, int): int}, paused_time: int) -> None:
 		"""Draw everything onto the screen"""
 		# Draw background
 		# self.main_surface.fill(BG_COLOR)
@@ -136,8 +144,7 @@ class Graphics:
 			# Draw spit fire
 			if snake.spit_fire_posis:
 				screen_pos = self.grid_to_screen_pos(snake.spit_fire_posis[0 if head_orientation in [ORIENT_RIGHT, ORIENT_DOWN] else -1])
-				# The spit fire range might be cut because of obstacles, so we have to check for that and only show
-				# the image partially in that case
+				# The spit fire range might be cut because of obstacles, so we have to check for that and only show the image partially in that case
 				factor = len(snake.spit_fire_posis) / SPIT_FIRE_RANGE
 				trg_area = (0, 0, factor * self.fire.get_width(), self.fire.get_height())
 				trg_image = self.fire.subsurface(trg_area)
@@ -151,7 +158,6 @@ class Graphics:
 			pygame.draw.circle(self.map_surface, RED, center, radius1)
 		# Draw snake status
 		for surf, snake in zip(self.status_surfaces, snakes):
-			# surf.fill((random.randrange(255), random.randrange(255), random.randrange(255)))
 			to_be_added_rects = [self.snake_chili_rect]
 			to_be_added_rects.extend(self.snake_burger_rects)
 			# Draw status images
@@ -169,9 +175,14 @@ class Graphics:
 				surf.blit(self.drunk_img, self.drunk_img.get_rect(center=self.snake_drunk_rect.center))
 				drunk_font = self.snake_info_font.render(str(int(snake.is_drunk / REOCC_PER_SEC)), True, BLACK if snake.is_drunk > 3 else RED)
 				surf.blit(drunk_font, drunk_font.get_rect(center=self.snake_drunk_rect.center))
-			# for rect in to_be_added_rects:
-				# pygame.draw.rect(surf, (random.randrange(255), random.randrange(255), random.randrange(255)), rect)
-				# pygame.draw.rect(surf, GREY, rect)
+		# Draw score
+		score = sum(snake.score for snake in snakes)
+		score_font = self.score_font.render(f"SCORE: {str(score)}", True, BG_COLOR)
+		self.main_surface.blit(score_font, score_font.get_rect(topleft=utils.add_two_tuples(self.score_rect.topleft, (0, score_font.get_height()))))
+		time_ms = pygame.time.get_ticks() - paused_time
+		time_str = f"{int(time_ms / 60000)}:{str(int(time_ms / 1000) % 60).zfill(2)}"
+		time_font = self.score_font.render(f"TIME: {time_str}", True, BG_COLOR)
+		self.main_surface.blit(time_font, time_font.get_rect(topleft=utils.add_two_tuples(self.score_rect.topleft, (0, 3 * score_font.get_height()))))
 		pygame.display.update()
 
 	def grid_to_screen_pos(self, grid_pos: (int, int)) -> (int, int):

@@ -47,7 +47,8 @@ Growing = Objects.APPLE | Objects.MELON
 Speeding = Objects.COFFEE | Objects.TEA
 Complex = Objects.BEER | Objects.BOMB | Objects.CHILI
 Hurting = Objects.WALL | Objects.EXPLOSION
-Undestroyable = Objects.WALL
+Indestructible = Objects.WALL
+MoveStopper = Objects.WALL | Objects.BOMB
 
 
 def string_to_object(string: str) -> Objects:
@@ -125,11 +126,11 @@ def get_next_squares(pos: (int, int), direction: (int, int), num_squares: int) -
 
 def get_spit_fire_squares(pos: (int, int), direction: (int, int), num_squares: int, map: [[Objects]]) -> [(int, int)]:
 	"""Return the next squares, starting from the given pos in the given direction,
-	but stop if an undestroyable Object is in the way"""
+	but stop if an indestructible Object is in the way"""
 	next_squares = get_next_squares(pos, direction, num_squares)
 	for idx, square in enumerate(next_squares):
 		row, col = square
-		if row >= len(map) or col >= len(map[row]) or map[row][col] in Undestroyable:
+		if row >= len(map) or col >= len(map[row]) or map[row][col] in Indestructible:
 			return next_squares[0:idx]
 	return next_squares
 

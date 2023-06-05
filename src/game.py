@@ -31,7 +31,7 @@ class Game:
 		# corresponding to that kind of element (e.g. (utils.Cntable.BOMB, 0) would refer to bomb #0 in the bombs list.
 		# If no additional index is needed, None is used for the latter.
 		# The values of the dict are ints showing the countdown for the specific element w.r.t. to REOCC_DUR.
-		self.counters = {(utils.Cntble.DROP_ITEM, None): DROP_ITEM_RATE * REOCC_PER_SEC}
+		self.counters = {(utils.Cntble.DROP_ITEM, None): self.level.drop_rate * REOCC_PER_SEC}
 		# self.bombs is a dict of all bombs. Key is the location of the bomb, value is the cntdwn and the orientation of the bomb
 		self.bombs: {(int, int): (int, (int, int))} = {}
 		self.explosions: {(int, int): int} = {}
@@ -108,11 +108,12 @@ class Game:
 		self.crashes.extend([(new_pos[1], new_pos[0]) for new_pos in new_posis if new_pos[0] in exploding_squares])
 		# Update real snake positions if no crash happened
 		if not self.crashes:
-			for snake, new_pos, new_spit_fire_pos in zip(snakes_to_upd, new_posis, new_spit_fire_posis):
+			for snake, new_pos, new_spit_fire_pos, obj in zip(snakes_to_upd, new_posis, new_spit_fire_posis, objects):
 				self.free_squares |= {snake.pos[-1]} if snake.pos[-1] != new_pos[-1] else set()
 				self.free_squares -= {new_pos[0]}
 				snake.pos = new_pos
 				snake.spit_fire_posis = new_spit_fire_pos
+				snake.score += ITEM_SCORES.get(obj, 0)
 		# Check for crashes by snakes getting burned (only after the snake posis got updated, so that the new posis
 		# incl. the new fire spit gets drawn on the screen)
 		fire_posis = new_spit_fire_posis + rem_spit_fire_posis
@@ -149,7 +150,7 @@ class Game:
 						new_object = random.choice(self.level.items)
 						self.level.map[i][j] = new_object
 						self.free_squares -= {(i, j)}
-						self.counters[k] = DROP_ITEM_RATE * REOCC_PER_SEC
+						self.counters[k] = self.level.drop_rate * REOCC_PER_SEC
 						if new_object == utils.Objects.BOMB:
 							self.bombs[(i, j)] = (BOMB_CNTDWN * REOCC_PER_SEC, NO_ORIENTATION)
 							new_obj.append(utils.Objects.BOMB)
@@ -172,7 +173,7 @@ class Game:
 		row, col = bomb_pos
 		exploded_squares = [(row - 1 + i, col - 1 + j) for i in range(3) for j in range(3)]
 		for i, j in exploded_squares:
-			if self.level.map[i][j] not in utils.Undestroyable:
+			if self.level.map[i][j] not in utils.Indestructible:
 				self.level.map[i][j] = utils.Objects.EXPLOSION
 		# Check for exploded snakes
 		self.crashes.extend([(pos, pos) for snake in self.snakes for pos in snake.pos if pos in exploded_squares])
@@ -190,7 +191,7 @@ class Game:
 		row, col = pos
 		rel_squares = [(row - 1 + i, col - 1 + j) for i in range(3) for j in range(3)]
 		for i, j in rel_squares:
-			if self.level.map[i][j] not in utils.Undestroyable:
+			if self.level.map[i][j] not in utils.Indestructible:
 				self.level.map[i][j] = utils.Objects.NONE
 		del self.explosions[pos]
 
@@ -203,12 +204,12 @@ class Game:
 		[1] a bool showing if the bomb hit a stopper like a wall, a snake part etc.
 		"""
 		cntdwn, orientation = self.bombs[old_pos]
-		new_pos = utils.add_two_tuples(old_pos, orientation)
 		if orientation == NO_ORIENTATION:
 			# Bomb isn't moving
 			return old_pos, False
+		new_pos = utils.add_two_tuples(old_pos, orientation)
 		snake_posis = [pos for snake in self.snakes for pos in snake.pos]
-		if self.level.map[new_pos[0]][new_pos[1]] == utils.Objects.WALL or new_pos in snake_posis:
+		if self.level.map[new_pos[0]][new_pos[1]] in utils.MoveStopper or new_pos in snake_posis:
 			# Bomb hit a stopper -> stop it's movement
 			self.bombs[old_pos] = (cntdwn, NO_ORIENTATION)
 			return old_pos, True

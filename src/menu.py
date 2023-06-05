@@ -30,7 +30,6 @@ ORANGE = (255, 128, 0)
 GREY = (192, 192, 192)
 BLACK = (0, 0, 0)
 BLACK_TP = (0, 0, 0, 0)
-BG_COLOR = (167, 226, 247)
 # FILENAMES_SNAKE = {GREEN: "../res/menu_snake_green.png", BLUE: "../res/menu_snake_blue.png",
 #                    CYAN: "../res/menu_snake_cyan.png", PINK: "../res/menu_snake_pink.png"}
 FILENAME_ROOT_LVL_PREV = "../res/level_prev_{}.png"

@@ -47,7 +47,7 @@ class Communicator:
         self.lang = utils.Language.ENGLISH
         self.levels = []
         self.read_level_infos()
-        self.level = self.levels[0]
+        self.level = self.levels[7]
         utils.play_music_track(FILENAMES_MUSIC_TRACKS[0], 0.1)
         self.scaling_factor = self.main_surface.get_height() / BENCHMARK_HEIGHT
         self.start_bg_img = pygame.transform.scale(pygame.image.load(FILENAME_START_BG).convert_alpha(), self.main_surface.get_size())
@@ -73,6 +73,8 @@ class Communicator:
         self.crash_sound = pygame.mixer.Sound(FILENAME_CRASH_SOUND)
         self.paused = False
         self.quit = False
+        self.pause_start_time = 0
+        self.paused_time = 0
         self.clock = pygame.time.Clock()
 
     def set_start_screen(self):
@@ -101,15 +103,17 @@ class Communicator:
     def start(self):
         """Start the execution"""
         if self.start_menu.handle_events():
-            self.start_or_resume_game()
+            self.start_game()
 
-    def start_or_resume_game(self):
+    def start_game(self):
         """Start or resume the game"""
+        self.paused_time += pygame.time.get_ticks()
         while not self.quit:
             self.game_loop()
 
     def pause_game(self) -> bool:
         """Pause the game. Return True if user wants to resume and False for exit."""
+        self.pause_start_time = pygame.time.get_ticks()
         self.reset_timer(True)
         self.pause_menu.reset()
         # Use current state as the background for the pause menu
@@ -119,6 +123,7 @@ class Communicator:
             self.paused = False
         else:
             self.quit = True
+        self.paused_time += (pygame.time.get_ticks() - self.pause_start_time)
         return resume
 
     def reset_timer(self, deactivate=False):
@@ -134,7 +139,7 @@ class Communicator:
     def game_loop(self) -> None:
         """Main game loop"""
         self.reset_timer()
-        self.graphics.update_display(*self.game.get_infos_for_updating_display())
+        self.graphics.update_display(*self.game.get_infos_for_updating_display(), paused_time=self.paused_time)
         # start game loop
         crashed = False
         while not self.paused and not self.quit:
@@ -154,20 +159,21 @@ class Communicator:
                     snake_ids_to_update.append(event.snake_idx)
                 elif event.type == REOCC_TIMER and not crashed:
                     # update all counting elements
-                    new_obj = self.game.update_counting()
-                    self.play_sounds(new_obj)
-                # Update position of snakes
-                if snake_ids_to_update:
-                    items = self.game.update_snakes(snake_ids_to_update)
-                    self.play_sounds(items)
-                    for _id in snake_ids_to_update:
-                        pygame.time.set_timer(self.upd_snake_events[_id], int(1000 / self.game.snakes[_id].speed))
-                if self.game.crashes and not crashed:
-                    self.crash_sound.play()
-                    crashed = True
-                # Update display
-                self.graphics.update_display(*self.game.get_infos_for_updating_display())
-                self.clock.tick(FPS)
+                    new_objs = self.game.update_counting()
+                    self.play_sounds(new_objs)
+            # Update position of snakes
+            if snake_ids_to_update:
+                items = self.game.update_snakes(snake_ids_to_update)
+                self.play_sounds(items)
+                for _id in snake_ids_to_update:
+                    pygame.time.set_timer(self.upd_snake_events[_id], int(1000 / self.game.snakes[_id].speed))
+            # Update display
+            self.graphics.update_display(*self.game.get_infos_for_updating_display(), paused_time=self.paused_time)
+            if self.game.crashes and not crashed:
+                self.crash_sound.play()
+                crashed = True
+                self.paused = True
+            self.clock.tick(FPS)
         if self.paused:
             self.pause_game()
 
