@@ -15,7 +15,8 @@ pygame.init()
 # ----- Constants ------
 FILENAME_LEVEL_INFO = "../res/levels.json"
 FILENAME_ITEM_SOUNDS = {utils.Objects.APPLE: "../res/eat.ogg", utils.Objects.MELON: "../res/eat.ogg", utils.Objects.CHILI: "../res/eat.ogg",
-                        utils.Objects.COFFEE: "../res/slurp.ogg", utils.Objects.TEA: "../res/slurp.ogg", utils.Objects.BEER: "../res/burp.ogg"}
+                        utils.Objects.COFFEE: "../res/slurp.ogg", utils.Objects.TEA: "../res/slurp.ogg", utils.Objects.BEER: "../res/burp.ogg",
+                        utils.Objects.BOMB: "../res/bomb.ogg", utils.Objects.EXPLOSION: "../res/explosion.ogg"}
 FILENAME_CRASH_SOUND = "../res/crash.ogg"
 UPDATE_SNAKES = [pygame.event.custom_type() for _ in range(4)]
 REOCC_TIMER = pygame.event.custom_type()
@@ -122,10 +123,10 @@ class Communicator:
 
     def reset_timer(self, deactivate=False):
         """
-		Reset the timer for the reoccurring events.
+        Reset the timer for the reoccurring events.
 
-		:param deactivate: If set to True, all reoccurring events will be deactivated.
-		"""
+        :param deactivate: If set to True, all reoccurring events will be deactivated.
+        """
         for snake in self.game.snakes:
             pygame.time.set_timer(self.upd_snake_events[snake.idx], 0 if deactivate else int(1000 / snake.speed))
         pygame.time.set_timer(self.reocc_event, 0 if deactivate else REOCC_DUR)
@@ -153,7 +154,8 @@ class Communicator:
                     snake_ids_to_update.append(event.snake_idx)
                 elif event.type == REOCC_TIMER and not crashed:
                     # update all counting elements
-                    self.game.update_counting()
+                    new_obj = self.game.update_counting()
+                    self.play_sounds(new_obj)
                 # Update position of snakes
                 if snake_ids_to_update:
                     items = self.game.update_snakes(snake_ids_to_update)

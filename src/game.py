@@ -4,7 +4,6 @@
 import itertools
 import random
 import utils
-from graphics import Graphics
 from snake import Snake
 from level import Level
 from constants import *
@@ -13,8 +12,6 @@ import pygame
 pygame.init()
 
 # ----- Constants ------
-UPDATE_SNAKES = [pygame.event.custom_type() for _ in range(4)]
-REOCC_TIMER = pygame.event.custom_type()
 
 
 # ----- Classes --------
@@ -24,24 +21,20 @@ class Game:
 		self.level = level
 		self.snakes = [Snake(name, idx, color, controls) for idx, (name, color, controls) in enumerate(zip(player_names, player_colors, player_controls))]
 		self.init_snake_pos()
-		# self.graphics = Graphics(main_surface, self.level.num_rows, self.level.num_cols)
 		# crashes is a list of tuples of positions. For each crash that occurred, it holds the coordinates of the
 		# two squares between which the crash happened
 		self.crashes: [((int, int), (int, int))] = []
 		self.free_squares = set([(i, j) for i, row in enumerate(level.map) for j, obj in enumerate(row) if obj == utils.Objects.NONE]) - set([pos for snake in self.snakes for pos in snake.pos])
-		# self.upd_snake_events = [pygame.event.Event(event_id, {"snake_idx": idx}) for idx, event_id in enumerate(UPDATE_SNAKES[:len(self.snakes)])]
-		# self.reocc_event = pygame.event.Event(REOCC_TIMER, {"duration": REOCC_DUR})
 		self.passed_reoccs = 0
 		# counters is a dict tracking the game elements that needs to be updated every second. Its keys are tuples of
 		# type (utils.Cntable, int), where the former shows the kind of element and the latter the additional index
 		# corresponding to that kind of element (e.g. (utils.Cntable.BOMB, 0) would refer to bomb #0 in the bombs list.
 		# If no additional index is needed, None is used for the latter.
 		# The values of the dict are ints showing the countdown for the specific element w.r.t. to REOCC_DUR.
-		self.counters = {(utils.Cntble.DROP_ITEM, None): DROP_ITEM_SPEED * REOCC_PER_SEC}
+		self.counters = {(utils.Cntble.DROP_ITEM, None): DROP_ITEM_RATE * REOCC_PER_SEC}
 		# self.bombs is a dict of all bombs. Key is the location of the bomb, value is the cntdwn and the orientation of the bomb
 		self.bombs: {(int, int): (int, (int, int))} = {}
 		self.explosions: {(int, int): int} = {}
-		# self.graphics.update_display(self.level, self.snakes, self.crashes, self.create_bomb_dict(), self.explosions)
 
 	def init_snake_pos(self) -> None:
 		"""Initialize the positions of the snakes"""
@@ -59,57 +52,6 @@ class Game:
 			if snake.update_orientation(key):
 				return True
 		return False
-
-	# def game_loop(self) -> None:
-	# 	"""Main game loop"""
-	# 	# Initialize timer
-	# 	for snake in self.snakes:
-	# 		pygame.time.set_timer(self.upd_snake_events[snake.idx], int(1000 / snake.speed))
-	# 	# pygame.time.set_timer(DROP_ITEM, DROP_ITEM_SPEED)
-	# 	pygame.time.set_timer(self.reocc_event, REOCC_DUR)
-	# 	self.graphics.update_display(self.level, self.snakes, self.crashes, self.create_bomb_dict(), self.explosions)
-	# 	# start game loop
-	# 	is_running = True
-	# 	crashed = False
-	# 	while is_running:
-	# 		snakes_to_update = []
-	# 		for event in pygame.event.get():
-	# 			if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-	# 				# Quit
-	# 				is_running = False
-	# 			elif event.type == pygame.KEYDOWN and not crashed:
-	# 				# Try updating orientation of snake
-	# 				for snake in self.snakes:
-	# 					if snake.update_orientation(event.key):
-	# 						break
-	# 				else:
-	# 					# Check for other keys
-	# 					pass
-	# 			elif event.type in UPDATE_SNAKES and not crashed:
-	# 				# Update position of snake
-	# 				snakes_to_update.append(self.snakes[event.snake_idx])
-	# 			elif event.type == REOCC_TIMER and not crashed:
-	# 				# update all counting game elements
-	# 				self.update_counting()
-	# 				# threatened_squares = []
-	# 				for snake in self.snakes:
-	# 					if snake.update_counting():
-	# 						self.update_spit_fire_posis(snake)
-	# 				# crashed_squares = self.is_snake_on_squares(threatened_squares)
-	# 				# self.crashes.extend([(pos, pos) for pos in crashed_squares])
-	# 			# Update display
-	# 			if snakes_to_update:
-	# 				for item in self.update_snakes(snakes_to_update):
-	# 					# Play sounds
-	# 					if item in self.item_sounds:
-	# 						self.item_sounds[item].play()
-	# 				for snake in snakes_to_update:
-	# 					pygame.time.set_timer(self.upd_snake_events[snake.idx], int(1000 / snake.speed))
-	# 			self.graphics.update_display(self.level, self.snakes, self.crashes, self.create_bomb_dict(), self.explosions)
-	# 			if self.crashes and not crashed:
-	# 				self.crash_sound.play()
-	# 				crashed = True
-	# 			self.clock.tick(FPS)
 
 	def update_snakes(self, snake_ids_to_upd: [int]) -> [utils.Objects]:
 		"""
@@ -177,8 +119,9 @@ class Game:
 		self.crashes.extend([(pos, pos) for snake_pos, fire_pos in itertools.product(new_posis + remaining_posis, fire_posis) for pos in snake_pos if pos in fire_pos])
 		return objects
 
-	def update_counting(self) -> None:
-		"""Update all counting game elements"""
+	def update_counting(self) -> [utils.Objects]:
+		"""Update all counting game elements and return a list of new objects (only bombs and explosions)"""
+		new_obj = []
 		# Update explosions
 		for pos in list(self.explosions.keys()):
 			self.explosions[pos] -= 1
@@ -190,6 +133,7 @@ class Game:
 			self.bombs[pos] = (new_cntdwn, orientation)
 			if new_cntdwn == 0:
 				self.handle_explosion(pos)
+				new_obj.append(utils.Objects.EXPLOSION)
 			elif orientation != NO_ORIENTATION:
 				# Move the bomb one square
 				self.move_bomb(pos)
@@ -197,7 +141,7 @@ class Game:
 		for k, v in self.counters.items():
 			elem, idx = k
 			if v == 1:
-				# Countdown reaches zero, handle it depending on the element.
+				# Countdown reaches zero, handle it depending on the element
 				match elem:
 					case utils.Cntble.DROP_ITEM:
 						# drop a new item on the map
@@ -205,9 +149,10 @@ class Game:
 						new_object = random.choice(self.level.items)
 						self.level.map[i][j] = new_object
 						self.free_squares -= {(i, j)}
-						self.counters[k] = DROP_ITEM_SPEED * REOCC_PER_SEC
+						self.counters[k] = DROP_ITEM_RATE * REOCC_PER_SEC
 						if new_object == utils.Objects.BOMB:
 							self.bombs[(i, j)] = (BOMB_CNTDWN * REOCC_PER_SEC, NO_ORIENTATION)
+							new_obj.append(utils.Objects.BOMB)
 					case _:
 						pass
 			else:
@@ -216,6 +161,7 @@ class Game:
 		for snake in self.snakes:
 			if snake.update_counting():
 				self.update_spit_fire_posis(snake)
+		return new_obj
 
 	def handle_explosion(self, bomb_pos: (int, int)) -> None:
 		"""

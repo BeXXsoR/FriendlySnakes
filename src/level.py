@@ -3,6 +3,7 @@
 # ----- Imports --------
 import utils
 import pygame
+from constants import DROP_ITEM_RATE
 
 pygame.init()
 
@@ -15,15 +16,20 @@ class Level:
 
 	def __init__(self, level_info: {}):
 		self.name = None
+		self.id = None
 		self.map = []
 		self.start_pos = []
 		self.item_rates = {}
-		self.trg_score = None
+		self.drop_rate = DROP_ITEM_RATE
+		self.goal = {}
+		self.bg = None
 		self.profiles = {}
 		for k, v in level_info.items():
 			if k == "map":
 				self.map = utils.strings_to_objects(v)
 				self.start_pos = self.get_start_pos(v, ",")
+			elif k == "bg":
+				self.bg = utils.Objects[v]
 			else:
 				setattr(self, k, v)
 		self.num_cols = len(self.map)

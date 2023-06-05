@@ -148,5 +148,6 @@ def play_music_track(filename: str, volume: float = 1.0) -> None:
 
 def get_char_for_pygame_key(pygame_key: int) -> str:
 	"""Transform an int representing a pygame key constant to the corresponding char"""
-	return "g"
+	descr = pygame.key.name(pygame_key, False)
+	return descr
 
