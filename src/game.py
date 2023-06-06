@@ -160,7 +160,11 @@ class Game:
 				self.counters[k] -= 1
 		# Update each snake counting elements
 		for snake in self.snakes:
-			if snake.update_counting():
+			stat = snake.update_counting()
+			if stat == 1:
+				self.update_spit_fire_posis(snake)
+				new_obj.append(utils.Objects.FIRE_SPIT)
+			elif stat == 2:
 				self.update_spit_fire_posis(snake)
 		return new_obj
 

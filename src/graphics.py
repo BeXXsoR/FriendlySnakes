@@ -60,9 +60,9 @@ class Graphics:
 		self.score_rect.topright = self.usable_rect.topright
 		# self.score_surface = self.main_surface.subsurface(self.score_rect)
 		# Prepare images
+		self.wall = pygame.transform.scale(pygame.image.load(FILENAME_WALL).convert_alpha(), self.square_size)
 		self.items_orig = {obj: pygame.image.load(filename).convert_alpha() for obj, filename in FILENAME_ITEMS.items()}
-		self.items = {obj: pygame.transform.scale(img_orig, self.square_size)
-					  for obj, img_orig in self.items_orig.items()}
+		self.items = {obj: pygame.transform.scale(img_orig, self.square_size) for obj, img_orig in self.items_orig.items()}
 		self.fire = pygame.transform.scale(pygame.image.load(FILENAME_FIRE_SPIT).convert_alpha(), (SPIT_FIRE_RANGE * self.edge_size, self.edge_size))
 		self.bomb_anim = animations.Animation(FILENAME_BOMB, self.square_size)
 		self.explosion_anim = animations.Animation(FILENAME_EXPLOSION, (3 * self.edge_size, 3 * self.edge_size))
@@ -91,7 +91,8 @@ class Graphics:
 				grid_pos = (row, col)
 				screen_pos = self.grid_to_screen_pos(grid_pos)
 				if obj == utils.Objects.WALL:
-					pygame.draw.rect(self.map_surface, wall_color, pygame.rect.Rect(screen_pos, self.square_size))
+					self.map_surface.blit(self.wall, screen_pos)
+					# pygame.draw.rect(self.map_surface, wall_color, pygame.rect.Rect(screen_pos, self.square_size))
 				elif obj == utils.Objects.BOMB:
 					cur_frame_id = self.bomb_anim.num_frames - bombs[grid_pos]
 					cur_frame = self.bomb_anim.pygame_frames[cur_frame_id]

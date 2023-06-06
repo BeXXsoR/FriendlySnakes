@@ -61,9 +61,9 @@ class Snake:
 		"""Adjust the speed of the snake by multiplying it with the given factor"""
 		self.speed = max(MIN_SNAKE_SPEED, min(int(factor * self.speed), MAX_SNAKE_SPEED))
 
-	def update_counting(self) -> bool:
-		"""Handle reoccurring updates. Returns True if the spit fire posis need to be updated"""
-		update_spit_fire_posis = False
+	def update_counting(self) -> int:
+		"""Handle reoccurring updates. Returns 1 if a fire spit started, 2 if it ended, and 0 otherwise"""
+		update_spit_fire_posis = 0
 		# Check drunk countdown
 		if self.is_drunk > 1:
 			self.is_drunk -= 1
@@ -74,12 +74,12 @@ class Snake:
 			self.piquancy_growing -= 1
 		elif self.piquancy_growing == 1:
 			self.spit_fire()
-			update_spit_fire_posis = True
+			update_spit_fire_posis = 1
 		if self.spits_fire > 1:
 			self.spits_fire -= 1
 		elif self.spits_fire == 1:
 			self.release_fire()
-			update_spit_fire_posis = True
+			update_spit_fire_posis = 2
 		return update_spit_fire_posis
 
 	def get_drunk(self) -> None:

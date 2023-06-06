@@ -16,7 +16,7 @@ pygame.init()
 FILENAME_LEVEL_INFO = "../res/levels.json"
 FILENAME_ITEM_SOUNDS = {utils.Objects.APPLE: "../res/eat.ogg", utils.Objects.MELON: "../res/eat.ogg", utils.Objects.CHILI: "../res/eat.ogg",
                         utils.Objects.COFFEE: "../res/slurp.ogg", utils.Objects.TEA: "../res/slurp.ogg", utils.Objects.BEER: "../res/burp.ogg",
-                        utils.Objects.BOMB: "../res/bomb.ogg", utils.Objects.EXPLOSION: "../res/explosion.ogg"}
+                        utils.Objects.BOMB: "../res/bomb.ogg", utils.Objects.EXPLOSION: "../res/explosion.ogg", utils.Objects.FIRE_SPIT: "../res/fire_spit.ogg"}
 FILENAME_CRASH_SOUND = "../res/crash.ogg"
 UPDATE_SNAKES = [pygame.event.custom_type() for _ in range(4)]
 REOCC_TIMER = pygame.event.custom_type()
@@ -47,7 +47,7 @@ class Communicator:
         self.lang = utils.Language.ENGLISH
         self.levels = []
         self.read_level_infos()
-        self.level = self.levels[7]
+        self.level = self.levels[9]
         utils.play_music_track(FILENAMES_MUSIC_TRACKS[0], 0.1)
         self.scaling_factor = self.main_surface.get_height() / BENCHMARK_HEIGHT
         self.start_bg_img = pygame.transform.scale(pygame.image.load(FILENAME_START_BG).convert_alpha(), self.main_surface.get_size())

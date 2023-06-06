@@ -40,6 +40,7 @@ class Objects(Flag):
 	CHILI = auto()
 	BOMB = auto()
 	EXPLOSION = auto()
+	FIRE_SPIT = auto()
 
 
 Eatable = Objects.APPLE | Objects.MELON | Objects.COFFEE | Objects.TEA | Objects.BEER | Objects.CHILI

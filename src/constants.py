@@ -52,6 +52,7 @@ FILENAME_SNAKE_PARTS = {GREEN: ["../res/snake_head_green.png", "../res/snake_bod
 FILENAME_ITEMS = {utils.Objects.APPLE: "../res/apple.png", utils.Objects.MELON: "../res/melon.png",
 				  utils.Objects.COFFEE: "../res/coffee.png", utils.Objects.TEA: "../res/tea.png", utils.Objects.BEER: "../res/beer.png",
 				  utils.Objects.CHILI: "../res/chili.png"}
+FILENAME_WALL = "../res/wall.png"
 FILENAME_FIRE_SPIT = "../res/fire_spit.png"
 FILENAME_BOMB = "../res/bomb.gif"
 FILENAME_EXPLOSION = "../res/explosion.gif"
