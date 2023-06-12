@@ -1,5 +1,5 @@
 # Friendly Snakes
-Friendly Snakes is a multiplayer cooperative variant of the classic snake game. With up to four players, each controls their own snake, eating (and drinking) items that change the snakes size, speed, controls, avoiding fire, bombs and explosions, surviving as long as possible while getting larger and larger. But the larger the snakes, the less room there is to maneuver, and suddenly your snake might be trapped without an escape route. Work together and let the snakes shine!
+Friendly Snakes is a multiplayer cooperative variant of the classic snake game. Up to four players each control their own snake, eating (and drinking) items that change the snakes size, speed, controls, avoiding fire, bombs and explosions, surviving as long as possible while getting larger and larger. But the larger the snakes, the less room there is to maneuver, and suddenly your snake might be trapped without an escape route. Work together and let the snakes shine!
 
 ## Installation
 A stand-alone installer can be found here: <Add GitHub repo for installer>
@@ -26,9 +26,9 @@ Here is an overview about the various items in the game:
 - Beer: Reverse the snakes controls for ten seconds (i.e. switch up<->down and left<->right)
 - Chili: Uh-Oh. The snake can't handle so much spice. For three seconds, the snakes mouth will get hotter and hotter. After that, the snake will spit fire for two seconds. If it burns another snake or itself, the game is over.
 - Bomb: Get the hell outta here! The bomb explodes after nine seconds, burning everything in a 3x3 square around it. If a snake is in that square or enters it while the explosion is still firing, the game is over.
-  - Bombs can be pushed! If a snake hits a bomb before it explodes, it moves in the respective direction as long as it hits an undestroyable object (like a wall) or a snake. Items in a bombs way will be erased.
+  - Bombs can be pushed! If a snake hits a bomb before it explodes, it moves in the respective direction as long as it hits an undestroyable object (like a wall) or a snake. Items in a bombs way will be erased. But be aware that the snakes are only strong enough to push a single bomb. If you try to push two bombs that are one behind the other, or if you try to push a bomb when there's a wall behind it, you crash!
 
-## Prerequesites
+## Prerequesites (for using the python code)
 The python code uses the following packages:
 - Pygame v2.4.0
 - Pygame Menu v4.4.3

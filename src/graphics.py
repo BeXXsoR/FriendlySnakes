@@ -77,7 +77,7 @@ class Graphics:
 		# Prepare fonts
 		self.snake_name_font = pygame.font.Font(None, int(SNAKE_NAME_FONT_SIZE * self.scaling_factor))
 		self.snake_info_font = pygame.font.Font(None, int(SNAKE_INFO_FONT_SIZE * self.scaling_factor))
-		self.score_font = pygame.font.SysFont("Snake Chan", int(SCORE_FONT_SIZE * self.scaling_factor))
+		self.score_font = pygame.font.Font(None, int(SCORE_FONT_SIZE * self.scaling_factor))
 
 	def update_display(self, level: Level, snakes: [Snake], crashes: [((int, int), (int, int))], bombs: {(int, int): int}, explosions: {(int, int): int}, paused_time: int) -> None:
 		"""Draw everything onto the screen"""
@@ -85,7 +85,7 @@ class Graphics:
 		# self.main_surface.fill(BG_COLOR)
 		self.main_surface.blit(self.bg, (0, 0))
 		# Draw level
-		wall_color = GREY
+		# wall_color = GREY
 		for row, obj_row in enumerate(level.map):
 			for col, obj in enumerate(obj_row):
 				grid_pos = (row, col)
@@ -98,8 +98,7 @@ class Graphics:
 					cur_frame = self.bomb_anim.pygame_frames[cur_frame_id]
 					self.map_surface.blit(cur_frame, screen_pos)
 				elif obj == utils.Objects.EXPLOSION:
-					# Do nothing here, explosions are handled seperately later (so that for explosions at the edge,
-					# the explosions are only drawn after the wall has been drawn)
+					# Do nothing here, explosions are handled seperately later (so that for explosions at the edge, the explosions are only drawn after the wall has been drawn)
 					pass
 				elif obj != utils.Objects.NONE:
 					self.map_surface.blit(self.items[obj], screen_pos)
@@ -176,13 +175,16 @@ class Graphics:
 				surf.blit(self.drunk_img, self.drunk_img.get_rect(center=self.snake_drunk_rect.center))
 				drunk_font = self.snake_info_font.render(str(int(snake.is_drunk / REOCC_PER_SEC)), True, BLACK if snake.is_drunk > 3 else RED)
 				surf.blit(drunk_font, drunk_font.get_rect(center=self.snake_drunk_rect.center))
-		# Draw score
-		score = sum(snake.score for snake in snakes)
-		score_font = self.score_font.render(f"SCORE: {str(score)}", True, BG_COLOR)
+		# Draw score, time and target
+		score_str = f"SCORE: {sum(snake.score for snake in snakes):3d}"
+		time_str = f"TIME: {utils.get_time_string_for_ms(pygame.time.get_ticks() - paused_time)}"
+		if level.goal == utils.Goals.HIGHSCORE:
+			score_str += " / {}".format(level.target)
+		elif level.goal == utils.Goals.SURVIVE:
+			time_str += " / {}".format(utils.get_time_string_for_ms(level.target * 1000))
+		score_font = self.score_font.render(score_str, True, BG_COLOR)
+		time_font = self.score_font.render(time_str, True, BG_COLOR)
 		self.main_surface.blit(score_font, score_font.get_rect(topleft=utils.add_two_tuples(self.score_rect.topleft, (0, score_font.get_height()))))
-		time_ms = pygame.time.get_ticks() - paused_time
-		time_str = f"{int(time_ms / 60000)}:{str(int(time_ms / 1000) % 60).zfill(2)}"
-		time_font = self.score_font.render(f"TIME: {time_str}", True, BG_COLOR)
 		self.main_surface.blit(time_font, time_font.get_rect(topleft=utils.add_two_tuples(self.score_rect.topleft, (0, 3 * score_font.get_height()))))
 		pygame.display.update()
 
@@ -191,12 +193,14 @@ class Graphics:
 		return self.square_posis[grid_pos[0]][grid_pos[1]]
 
 	def display_map(self, level: Level):
-		self.main_surface.fill(BG_COLOR)
-		# Draw level
-		wall_color = GREY
-		for row, obj_row in enumerate(level.map):
-			for col, obj in enumerate(obj_row):
-				screen_pos = self.grid_to_screen_pos((row, col))
-				if obj == utils.Objects.WALL:
-					pygame.draw.rect(self.map_surface, wall_color, pygame.rect.Rect(screen_pos, self.square_size))
-		pygame.display.update()
+		self.update_display(level, [], [], {}, {}, 0)
+
+		# self.main_surface.fill(BG_COLOR)
+		# # Draw level
+		# wall_color = GREY
+		# for row, obj_row in enumerate(level.map):
+		# 	for col, obj in enumerate(obj_row):
+		# 		screen_pos = self.grid_to_screen_pos((row, col))
+		# 		if obj == utils.Objects.WALL:
+		# 			pygame.draw.rect(self.map_surface, wall_color, pygame.rect.Rect(screen_pos, self.square_size))
+		# pygame.display.update()

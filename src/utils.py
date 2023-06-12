@@ -17,6 +17,12 @@ class Backgrounds(Enum):
 	DESERT = 1
 
 
+class Goals(Enum):
+	NONE = 0
+	HIGHSCORE = 1
+	SURVIVE = 2
+
+
 class SnakeParts(Enum):
 	HEAD = 0
 	BODY_STRAIGHT = 1
@@ -153,3 +159,7 @@ def get_char_for_pygame_key(pygame_key: int) -> str:
 	descr = pygame.key.name(pygame_key, False)
 	return descr
 
+def get_time_string_for_ms(ms: int) -> str:
+	"""Return a time string in format mm:ss for the given number of milliseconds"""
+	seconds = int(ms / 1000)
+	return "{}:{}".format(int(seconds / 60), str(seconds % 60).zfill(2))

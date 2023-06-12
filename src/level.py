@@ -1,4 +1,5 @@
 """Module for the level class in the friendly snakes package"""
+import copy
 
 # ----- Imports --------
 import utils
@@ -15,21 +16,27 @@ class Level:
 	"""The class for the levels"""
 
 	def __init__(self, level_info: {}):
+		"""Initialize  the level object"""
 		self.name = None
 		self.id = None
+		self.orig_map = []
 		self.map = []
 		self.start_pos = []
 		self.item_rates = {}
 		self.drop_rate = DROP_ITEM_RATE
-		self.goal = {}
+		self.goal = utils.Goals.NONE
+		self.target = None
 		self.bg = None
 		self.profiles = {}
 		for k, v in level_info.items():
 			if k == "map":
-				self.map = utils.strings_to_objects(v)
+				self.orig_map = utils.strings_to_objects(v)
+				self.map = copy.deepcopy(self.orig_map)
 				self.start_pos = self.get_start_pos(v, ",")
 			elif k == "bg":
 				self.bg = utils.Backgrounds[v]
+			elif k == "goal":
+				self.goal = utils.Goals[v]
 			else:
 				setattr(self, k, v)
 		self.num_cols = len(self.map)
@@ -60,3 +67,7 @@ class Level:
 						start_pos[player_idx].append(tuple())
 					start_pos[player_idx][body_idx] = (row, col)
 		return start_pos
+
+	def reset(self):
+		"""Reset all variables to their start state"""
+		self.map = copy.deepcopy(self.orig_map)

@@ -44,6 +44,15 @@ class Snake:
 		self.orientation = utils.subtract_tuples(self.head, self.pos[1])
 		self.is_growing = max(self.is_growing - 1, 0)
 
+	def reset(self) -> None:
+		"""Reset the snakes parameter"""
+		self.speed = 4
+		self.is_growing = 0
+		self.score = 0
+		self.piquancy_growing = 0
+		self.get_sober()
+		self.release_fire()
+
 	def update_orientation(self, key) -> bool:
 		"""Update the orientation based on the pressed key. Return True if the pressed key belonged to a snake"""
 		if key in self.controls:
@@ -57,9 +66,10 @@ class Snake:
 		"""Let the snake grow by the given size"""
 		self.is_growing += size
 
-	def adjust_speed(self, factor: float):
+	def adjust_speed(self, summand: int):
 		"""Adjust the speed of the snake by multiplying it with the given factor"""
-		self.speed = max(MIN_SNAKE_SPEED, min(int(factor * self.speed), MAX_SNAKE_SPEED))
+		# self.speed = max(MIN_SNAKE_SPEED, min(int(factor * self.speed), MAX_SNAKE_SPEED))
+		self.speed = max(MIN_SNAKE_SPEED, min(int(summand + self.speed), MAX_SNAKE_SPEED))
 
 	def update_counting(self) -> int:
 		"""Handle reoccurring updates. Returns 1 if a fire spit started, 2 if it ended, and 0 otherwise"""

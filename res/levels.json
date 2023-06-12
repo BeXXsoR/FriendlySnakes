@@ -29,7 +29,8 @@
 			"w, , , , ,m, , , , , , ,m,m,m,m,m,m, , , , , , ,w",
 			"w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w"],
 		"item_rates": {"a": 6, "m": 2, "c": 2, "t": 2, "b": 1, "o": 0, "h": 0},
-		"goal": {"highscore": 100},
+		"goal": "HIGHSCORE",
+		"target": 100,
 		"bg": "DESERT",
 		"profiles": {}
 	},
@@ -63,7 +64,8 @@
 			"w, , , , , , , , , , , , , , , , , , , , , , , ,w",
 			"w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w"],	
 		"item_rates": {"a": 4, "m": 2, "c": 3, "t": 2, "b": 2, "o": 1, "h": 1},
-		"goal": {"highscore": 100},
+		"goal": "HIGHSCORE",
+		"target": 100,
 		"bg": "DESERT",
 		"profiles": {}
 	},
@@ -97,7 +99,8 @@
 			"w,m, , , , , , , , ,c, , , ,c, , , , , , , , ,m,w",
 			"w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w"],	
 		"item_rates": {"a": 4, "m": 2, "c": 3, "t": 2, "b": 2, "o": 1, "h": 1},
-		"goal": {"highscore": 150},
+		"goal": "HIGHSCORE",
+		"target": 150,
 		"bg": "DESERT",
 		"profiles": {}
 	},
@@ -131,7 +134,8 @@
 			"w, , , , , , , , , ,m, ,m, ,m, , , , , , , , , ,w",
 			"w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w"],	
 		"item_rates": {"a": 0, "m": 1, "c": 1, "t": 0, "b": 1, "o": 5, "h": 1},
-		"goal": {"survive": 180},
+		"goal": "SURVIVE",
+		"target": 180,
 		"bg": "DESERT",
 		"profiles": {}
 	},
@@ -165,7 +169,8 @@
 			"w,s44, , , , , , , , , , , , , , , , , , ,s21,s22,s23,s24,w",
 			"w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w"],	
 		"item_rates": {"a": 4, "m": 2, "c": 3, "t": 2, "b": 2, "o": 1, "h": 1},
-		"goal": {"highscore": 300},
+		"goal": "HIGHSCORE",
+		"target": 300,
 		"bg": "DESERT",
 		"profiles": {}
 	},
@@ -200,7 +205,8 @@
 			"w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w"],	
 		"item_rates": {"a": 0, "m": 1, "c": 1, "t": 0, "b": 1, "o": 5, "h": 1},
 		"drop_rate": 3,
-		"goal": {"survive": 180},
+		"goal": "SURVIVE",
+		"target": 180,
 		"bg": "DESERT",
 		"profiles": {}
 	},
@@ -235,7 +241,8 @@
 			"w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w"],
 		"item_rates": {"a": 0, "m": 0, "c": 3, "t": 0, "b": 1, "o": 5, "h": 1},
 		"drop_rate": 0.5,
-		"goal": {"survive": 180},
+		"goal": "SURVIVE",
+		"target": 120,
 		"bg": "DESERT",
 		"profiles": {}
 	},
@@ -270,7 +277,8 @@
 			"w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w"],
 		"item_rates": {"a": 2, "m": 2, "c": 3, "t": 2, "b": 2, "o": 3, "h": 3},
 		"drop_rate": 3,
-		"goal": {"highscore": 500},
+		"goal": "HIGHSCORE",
+		"target": 500,
 		"bg": "DESERT",
 		"profiles": {}
 	},
@@ -305,7 +313,8 @@
 			"w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w"],
 		"item_rates": {"a": 6, "m": 6, "c": 1, "t": 0, "b": 1, "o": 1, "h": 1},
 		"drop_rate": 2,
-		"goal": {"survive": 180},
+		"goal": "SURVIVE",
+		"target": 180,
 		"bg": "DESERT",
 		"profiles": {}
 	},
@@ -339,7 +348,8 @@
 			"w, ,s21,s22,s23,s24, , , , , , , , , , , , , ,s34,s33,s32,s31, ,w",
 			"w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w,w"],
 		"item_rates": {"a": 3, "m": 3, "c": 1, "t": 2, "b": 2, "o": 0, "h": 2},
-		"goal": {"highscore": 500},
+		"goal": "HIGHSCORE",
+		"target": 500,
 		"bg": "DESERT",
 		"profiles": {}
 	}

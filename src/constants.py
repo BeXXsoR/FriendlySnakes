@@ -40,7 +40,8 @@ PIQUANCY_GROWING_DURATION = 3
 SPIT_FIRE_DURATION = 2
 SPIT_FIRE_RANGE = 2
 GROWING_SIZES = {utils.Objects.APPLE: 1, utils.Objects.MELON: 3}
-SPEEDING_FACTORS = {utils.Objects.COFFEE: 2, utils.Objects.TEA: 0.5}
+# SPEEDING_FACTORS = {utils.Objects.COFFEE: 1.5, utils.Objects.TEA: 2 / 3}
+SPEEDING_SUMMANDS = {utils.Objects.COFFEE: 3, utils.Objects.TEA: -3}
 REOCC_DUR = 250
 REOCC_PER_SEC = int(1000 / REOCC_DUR)
 ITEM_SCORES = {utils.Objects.APPLE: 3, utils.Objects.MELON: 6, utils.Objects.COFFEE: 9, utils.Objects.TEA: 0, utils.Objects.BEER: 7, utils.Objects.CHILI: 5}
@@ -67,6 +68,12 @@ SNAKE_INFO_FONT_SIZE = 40
 SCORE_FONT_SIZE = 40
 BG_ITEMS = [("Desert", 0)]
 MUSIC_TRACK_ITEMS = [("Bells Song", 0)]
+TEXTS_BUTTON_START_MENU = {utils.Language.GERMAN: ["Spielen", "Profil wählen", "Steuerung", "Optionen", "Verlassen"],
+						   utils.Language.ENGLISH: ["Play", "Choose profile", "Controls", "Options", "Exit"]}
+TEXTS_BUTTON_PAUSE_MENU = {utils.Language.GERMAN: ["Fortsetzen", "", "Steuerung", "Optionen", "Zurück zum Hauptmenü"],
+						   utils.Language.ENGLISH: ["Resume", "", "Controls", "Options", "Back to main menu"]}
+TEXTS_BUTTON_GAME_OVER_MENU = {utils.Language.GERMAN: ["Erneut spielen", "", "Steuerung", "Optionen", "Zurück zum Hauptmenü"],
+						   utils.Language.ENGLISH: ["Play again", "", "Controls", "Options", "Back to main menu"]}
 # benchmark screen: 2560x1440
 BENCHMARK_WIDTH = 2560
 BENCHMARK_HEIGHT = 1440
