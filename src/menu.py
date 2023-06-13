@@ -540,8 +540,10 @@ class Menu:
         self.exit = True
 
     def click_on_back_button(self, *args, **kwargs) -> None:
-        for submenu in [self.submenu_options, self.submenu_controls, self.submenu_levels]:
+        for submenu in [self.submenu_options, self.submenu_controls]:
             submenu.disable()
+        if self.submenu_levels:
+            self.submenu_levels.disable()
 
     def mouse_over_widget(self, widget: pygame_menu.widgets.Widget, event: pygame.event.Event) -> None:
         """Handle a mouseover on the given widget"""
@@ -579,12 +581,21 @@ class Menu:
         assert isinstance(img_wdg, pygame_menu.widgets.Image), f"Expected Image type, got {type(img_wdg)} instead."
         img_wdg.set_image(self.level_prev_imgs[self.level_idx])
 
+    def set_sound_volume(self, volume):
+        """Set the given volume as the default value for the sound volume widget"""
+        if 0 <= volume <= 1:
+            self.sound_volume = volume
+            self.submenu_options.get_widget("Sound volume").set_default_value(self.sound_volume)
+
     def get_infos(self) -> (int, int, float):
         """
         Return the params needed for outside the menu that might have been changed in the menu
         :return: Tuple containing [0] the index of the selected level, [1] the number of players, [2] the sound volume
         """
-        return self.level_idx, self.num_players, self.sound_volume
+        if self.submenu_levels:
+            return self.level_idx, self.num_players, self.sound_volume
+        else:
+            return None, None, self.sound_volume
 
     def update_display(self) -> None:
         """Display the current state on the screen"""

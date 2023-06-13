@@ -84,6 +84,7 @@ class Communicator:
         self.reocc_event = pygame.event.Event(REOCC_TIMER, {"duration": REOCC_DUR})
         self.item_sounds = {k: pygame.mixer.Sound(v) for k, v in FILENAME_ITEM_SOUNDS.items()}
         self.crash_sound = pygame.mixer.Sound(FILENAME_CRASH_SOUND)
+        self.sounds_all = list(self.item_sounds.values()) + [self.crash_sound]
         self.paused = False
         self.back_to_main_menu = False
         # self.pause_start_time = 0
@@ -92,9 +93,19 @@ class Communicator:
 
     def update_param_from_menu(self, menu: Menu) -> None:
         """Get the relevant infos form the given menu and update the internal parameters"""
-        self.level_idx, self.num_players, self.sound_volume = menu.get_infos()
-        self.level = self.levels[self.level_idx]
-        self.upd_snake_events = [pygame.event.Event(event_id, {"snake_idx": idx}) for idx, event_id in enumerate(UPDATE_SNAKES[:self.num_players])]
+        level_idx, num_players, new_sound_volume = menu.get_infos()
+        if level_idx:
+            self.level_idx = level_idx
+            self.level = self.levels[self.level_idx]
+        if num_players:
+            self.num_players = num_players
+            self.upd_snake_events = [pygame.event.Event(event_id, {"snake_idx": idx}) for idx, event_id in enumerate(UPDATE_SNAKES[:self.num_players])]
+        if new_sound_volume != self.sound_volume:
+            for sound in self.sounds_all:
+                sound.set_volume(new_sound_volume)
+            for menu in [self.start_menu, self.pause_menu, self.game_over_menu]:
+                menu.set_sound_volume(new_sound_volume)
+            self.sound_volume = new_sound_volume
 
     def set_start_screen(self):
         self.main_surface.blit(self.start_bg_img, (0, 0))
@@ -152,10 +163,10 @@ class Communicator:
         resume = self.pause_menu.handle_events()
         if resume:
             self.paused = False
-            self.sound_volume = self.pause_menu.sound_volume
         else:
             self.back_to_main_menu = True
             self.level.reset()
+        self.update_param_from_menu(self.pause_menu)
         self.paused_time += (pygame.time.get_ticks() - pause_start_time)
         return resume
 
@@ -163,13 +174,12 @@ class Communicator:
         """Handle the game over situation"""
         self.game_over_menu.reset()
         self.game_over_menu.bg_img = self.main_surface.copy()
-        if self.game_over_menu.handle_events():
+        if play_again := self.game_over_menu.handle_events():
             self.reset()
-            self.sound_volume = self.game_over_menu.sound_volume
-            return True
         else:
             self.back_to_main_menu = True
-            return False
+        self.update_param_from_menu(self.game_over_menu)
+        return play_again
 
     def reset(self) -> None:
         """Reset the game so that it can be played again"""
@@ -178,6 +188,7 @@ class Communicator:
         # snake_controls = [snake.controls for snake in self.game.snakes]
         # self.level.reset()
         # self.game = Game(snake_names, snake_colors, snake_controls, self.level, self.main_surface)
+        self.game.reset()
         self.paused = False
         self.back_to_main_menu = False
         self.paused_time = pygame.time.get_ticks()
