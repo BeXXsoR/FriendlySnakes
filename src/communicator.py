@@ -33,7 +33,7 @@ class Communicator:
     """Class for interacting between different parts of the game, e.g. start menu and game engine"""
 
     def __init__(self):
-        self.snake_names = ["Kokosnuss", "Tiger", "Muh", "Mausi"]
+        self.snake_names = ["Player 1", "Player 2", "Player 3", "Player 4"]
         self.snake_colors = [GREEN, BLUE, CYAN, PINK]
         self.snake_controls = [
             {pygame.K_UP: ORIENT_UP, pygame.K_LEFT: ORIENT_LEFT, pygame.K_DOWN: ORIENT_DOWN, pygame.K_RIGHT: ORIENT_RIGHT},
@@ -43,6 +43,7 @@ class Communicator:
         self.snake_controls_all = []
         for controls in self.snake_controls:
             self.snake_controls_all.extend(controls.keys())
+        self.num_players = 2
         self.main_surface = pygame.display.set_mode((0, 0))
         self.lang = utils.Language.ENGLISH
         self.level_idx = 0
@@ -50,6 +51,7 @@ class Communicator:
         self.read_level_infos()
         self.level = self.levels[self.level_idx]
         utils.play_music_track(FILENAMES_MUSIC_TRACKS[0], 0.1)
+        self.sound_volume = 1.0
         self.scaling_factor = self.main_surface.get_height() / BENCHMARK_HEIGHT
         self.start_bg_img = pygame.transform.scale(pygame.image.load(FILENAME_START_BG).convert_alpha(), self.main_surface.get_size())
         self.start_menu = Menu(self.main_surface,
@@ -73,11 +75,12 @@ class Communicator:
                                    TEXTS_BUTTON_GAME_OVER_MENU[self.lang])
         self.set_start_screen()
         self.init_start_menu()
+        self.game: Game
         # self.game = Game(self.snake_names, self.snake_colors, self.snake_controls, self.level)
-        self.game = Game(self.snake_names[:1], self.snake_colors[:1], self.snake_controls[:1], self.level)
+        # self.game = Game(self.snake_names[:1], self.snake_colors[:1], self.snake_controls[:1], self.level)
         # self.game = Game(self.snake_names[:2], self.snake_colors[:2], self.snake_controls[:2], self.level)
         self.graphics = Graphics(self.main_surface, self.level.num_rows, self.level.num_cols)
-        self.upd_snake_events = [pygame.event.Event(event_id, {"snake_idx": idx}) for idx, event_id in enumerate(UPDATE_SNAKES[:len(self.game.snakes)])]
+        self.upd_snake_events = [pygame.event.Event(event_id, {"snake_idx": idx}) for idx, event_id in enumerate(UPDATE_SNAKES)]
         self.reocc_event = pygame.event.Event(REOCC_TIMER, {"duration": REOCC_DUR})
         self.item_sounds = {k: pygame.mixer.Sound(v) for k, v in FILENAME_ITEM_SOUNDS.items()}
         self.crash_sound = pygame.mixer.Sound(FILENAME_CRASH_SOUND)
@@ -86,6 +89,12 @@ class Communicator:
         # self.pause_start_time = 0
         self.paused_time = 0
         self.clock = pygame.time.Clock()
+
+    def update_param_from_menu(self, menu: Menu) -> None:
+        """Get the relevant infos form the given menu and update the internal parameters"""
+        self.level_idx, self.num_players, self.sound_volume = menu.get_infos()
+        self.level = self.levels[self.level_idx]
+        self.upd_snake_events = [pygame.event.Event(event_id, {"snake_idx": idx}) for idx, event_id in enumerate(UPDATE_SNAKES[:self.num_players])]
 
     def set_start_screen(self):
         self.main_surface.blit(self.start_bg_img, (0, 0))
@@ -106,20 +115,23 @@ class Communicator:
         key_pressed = False
         while not key_pressed:
             for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN:
+                if event.type == pygame.KEYUP or event.type == pygame.MOUSEBUTTONUP:
                     key_pressed = True
         self.start_menu.slide_in()
 
     def start(self):
         """Start the execution"""
-        # # Show map
-        # self.show_map()
-        # return
-
         cnt = 0
         while self.start_menu.handle_events():
+            self.update_param_from_menu(self.start_menu)
+            # # Show map
+            # self.show_map()
+            # return
+            # if cnt == 0:
+            self.game = Game(self.snake_names[:self.num_players], self.snake_colors[:self.num_players], self.snake_controls[:self.num_players], self.level)
             if cnt > 0:
-                self.reset_game()
+                self.reset()
+                # self.game = Game(self.snake_names[:self.num_players], self.snake_colors[:self.num_players], self.snake_controls[:self.num_players], self.level)
             self.start_game()
             self.start_menu.reset()
             cnt += 1
@@ -140,8 +152,10 @@ class Communicator:
         resume = self.pause_menu.handle_events()
         if resume:
             self.paused = False
+            self.sound_volume = self.pause_menu.sound_volume
         else:
             self.back_to_main_menu = True
+            self.level.reset()
         self.paused_time += (pygame.time.get_ticks() - pause_start_time)
         return resume
 
@@ -150,20 +164,20 @@ class Communicator:
         self.game_over_menu.reset()
         self.game_over_menu.bg_img = self.main_surface.copy()
         if self.game_over_menu.handle_events():
-            self.reset_game()
+            self.reset()
+            self.sound_volume = self.game_over_menu.sound_volume
             return True
         else:
             self.back_to_main_menu = True
             return False
 
-    def reset_game(self) -> None:
+    def reset(self) -> None:
         """Reset the game so that it can be played again"""
         # snake_names = [snake.name for snake in self.game.snakes]
         # snake_colors = [snake.color for snake in self.game.snakes]
         # snake_controls = [snake.controls for snake in self.game.snakes]
         # self.level.reset()
         # self.game = Game(snake_names, snake_colors, snake_controls, self.level, self.main_surface)
-        self.game.reset()
         self.paused = False
         self.back_to_main_menu = False
         self.paused_time = pygame.time.get_ticks()

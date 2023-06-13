@@ -48,7 +48,10 @@ BUTTON_HEIGHT = 50
 OPTIONS_TOP_MARGIN = 13
 MENU_AREA_START = (0.01, 0.3)
 BUTTON_FONT_SIZE = 25
-LEVEL_PREV_IMG_SIZE = (200, 200)
+LEVEL_MENU_SIZE_FACTOR = 1
+# LEVEL_MENU_START = (0, 300)
+# LEVEL_MENU_SIZE = (1040, 740)
+LEVEL_PREV_IMG_SIZE = (115, 115)
 # endregion
 
 
@@ -207,15 +210,17 @@ class Menu:
         self.buttons_surf = self.menu_surf.subsurface(self.buttons_area_rect)
         #   Buttons inside the button area
         num_buttons = len(self.button_texts)
-        self.button_size = (self.buttons_area_rect.w, self.scaling_factor * BUTTON_HEIGHT)
+        self.button_size = (self.buttons_area_rect.w, int(self.scaling_factor * BUTTON_HEIGHT))
         free_space = int((self.buttons_area_rect.h - num_buttons * self.button_size[1]) / (num_buttons - 1))
         self.button_rects = [pygame.Rect((0, i * (self.button_size[1] + free_space)), self.button_size) for i in range(num_buttons)]
         self.button_imgs_orig = {state: pygame.image.load(FILENAMES_BUTTON[state]).convert_alpha() for state in WidgetState}
         self.button_imgs = {state: pygame.transform.scale(img_orig, self.button_size) for state, img_orig in self.button_imgs_orig.items()}
         self.button_base_imgs = {state: pygame_menu.BaseImage(image_path=FILENAMES_BUTTON[state], drawing_mode=pygame_menu.baseimage.IMAGE_MODE_FILL) for state in WidgetState}
         #   Texts for the buttons
-        self.button_font = pygame.font.SysFont("Snake Chan", int(BUTTON_FONT_SIZE * self.scaling_factor))
-        self.button_texts_rend = [self.button_font.render(text, True, WHITE) for text in self.button_texts]
+        self.font_size = int(BUTTON_FONT_SIZE * self.scaling_factor)
+        self.button_font_name = "Snake Chan"
+        self.button_std_font = pygame.font.SysFont(self.button_font_name, self.font_size)
+        self.button_texts_rend = [self.button_std_font.render(text, True, WHITE) for text in self.button_texts]
         #   2nd, define the sprites for the objects
         self.on_click_functions = [self.click_on_play_button, self.click_on_profile_button, self.click_on_controls_button, self.click_on_options_button, self.click_on_exit_button]
         self.buttons = [Clickable(self.button_imgs[WidgetState.NORMAL], rect, func) for rect, func in zip(self.button_rects, self.on_click_functions)]
@@ -244,7 +249,7 @@ class Menu:
                       MyRangeSlider("Sound volume", self.sound_volume, self.change_sound_volume),
                       MyDropSelect("Music Track", MUSIC_TRACK_ITEMS, self.change_music_track),
                       MyDropSelect("Background", BG_ITEMS, self.change_background)]
-        menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=self.button_font, widget_font_antialias=True, widget_font_color=WHITE)
+        menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=self.button_std_font, widget_font_antialias=True, widget_font_color=WHITE)
         buttons_offset = self.buttons_surf.get_abs_offset()
         submenu_options = pygame_menu.Menu("Options", self.buttons_area_rect.w, self.buttons_area_rect.h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=menu_theme)
         free_space = int((self.buttons_area_rect.h - (len(my_widgets) + 1) * self.button_size[1]) / len(my_widgets))
@@ -255,11 +260,12 @@ class Menu:
         red_block_rate = 0.875
         red_block_height = red_block_rate * block_height
         for my_wdg in my_widgets:
-            cur_wdg = self.add_widget_from_mywidget(my_wdg, submenu_options, self.button_size)
+            cur_wdg = self.add_widget_from_mywidget(my_wdg, submenu_options)
+            self.set_std_params(cur_wdg, self.button_size)
             options_frame.pack(cur_wdg, align=pygame_menu.locals.ALIGN_CENTER)
             options_frame.pack(submenu_options.add.vertical_margin(red_block_height - cur_wdg.get_height()))
-        options_frame.pack(submenu_options.add.vertical_margin((1 - red_block_rate) * len(my_widgets) * block_height))
-        options_frame.pack(self.set_std_params(submenu_options.add.button("Back", self.click_on_back_button), self.button_size), align=pygame_menu.locals.ALIGN_CENTER)
+        # options_frame.pack(submenu_options.add.vertical_margin((1 - red_block_rate) * len(my_widgets) * block_height))
+        self.add_back_button(submenu_options, options_frame, int((1 - red_block_rate) * len(my_widgets) * block_height))
         submenu_options.resize(options_frame.get_width(), options_frame.get_height())
         return submenu_options
 
@@ -307,23 +313,37 @@ class Menu:
 
     def init_submenu_level_selection(self, level_names: [str]) -> pygame_menu.Menu:
         """Init the submenu for the level and player number selection screen"""
-        font = pygame.font.SysFont("segoeuisymbol", int(BUTTON_FONT_SIZE * self.scaling_factor))
-        menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=font, widget_font_antialias=True, widget_font_color=WHITE)
+        menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=self.button_font_name, widget_font_antialias=True, widget_font_color=WHITE)
         buttons_offset = self.buttons_surf.get_abs_offset()
-        submenu_levels = pygame_menu.Menu("Level Selection", self.buttons_area_rect.w, self.buttons_area_rect.h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=menu_theme)
-        main_frame = submenu_levels.add.frame_v(submenu_levels.get_width(), submenu_levels.get_height(), padding=0)
-        play_button = self.add_widget_from_mywidget(MyButton("Play", self.start_new_game), submenu_levels, self.button_size)
-        sel_num_players = self.add_widget_from_mywidget(MyDropSelect("Number Of Players:", NUM_PLAYER_ITEMS, self.change_num_players), submenu_levels, self.button_size)
+        menu_w, menu_h = utils.mult_tuple_to_int(self.buttons_area_rect.size, LEVEL_MENU_SIZE_FACTOR)
+        submenu_levels = pygame_menu.Menu("Level Selection", menu_w, menu_h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=menu_theme)
+        play_button = self.add_widget_from_mywidget(MyButton("Play", self.start_new_game), submenu_levels)
+        sel_num_players = self.add_widget_from_mywidget(MySelector("Player Count: ", NUM_PLAYER_ITEMS, self.num_players - 1, self.change_num_players), submenu_levels)
         level_items = [(name, idx) for idx, name in enumerate(level_names)]
-        sel_level = self.add_widget_from_mywidget(MySelector("Level:", level_items, self.level_idx, self.change_level), submenu_levels, self.button_size)
-        level_img = submenu_levels.add.image(self.level_prev_imgs[self.level_idx], image_id=LEVEL_PREV_IMG_ID)
-        back_button = self.add_widget_from_mywidget(MyButton("Back", self.start_new_game), submenu_levels, self.button_size)
-        for wdg in [play_button, sel_num_players, sel_level, level_img, back_button]:
+        sel_level = self.add_widget_from_mywidget(MySelector("Level: ", level_items, self.level_idx, self.change_level), submenu_levels)
+        level_img = submenu_levels.add.image(self.level_prev_imgs[self.level_idx], image_id=LEVEL_PREV_IMG_ID, padding=0)
+        free_space = (submenu_levels.get_height() - 4 * self.button_size[1] - level_img.get_height()) / 4
+        block_height = self.button_size[1] + free_space
+        top_margin = OPTIONS_TOP_MARGIN * self.scaling_factor
+        main_frame = submenu_levels.add.frame_v(submenu_levels.get_width(), int(4 * block_height + level_img.get_height() + 2 * top_margin), padding=0)
+        main_frame.pack(submenu_levels.add.vertical_margin(top_margin))
+        red_block_rate = 0.875
+        # Pack widgets into the frame and add an appropriate vertical margin between them
+        wdg_params = [(play_button, True, 1.1 * block_height),
+                      (sel_num_players, True, red_block_rate * block_height),
+                      (sel_level, True, red_block_rate * block_height - 13 * self.scaling_factor),
+                      (level_img, False, 0)]
+        for (wdg, set_std, block_trg_h) in wdg_params:
+            if set_std:
+                wdg = self.set_std_params(wdg, self.button_size, self.button_font_name, self.font_size, True)
             main_frame.pack(wdg, align=pygame_menu.locals.ALIGN_CENTER)
-            # main_frame.pack(submenu_levels.add.vertical_margin(20))
+            if (diff := block_trg_h - wdg.get_height()) > 0:
+                main_frame.pack(submenu_levels.add.vertical_margin(diff))
+        self.add_back_button(submenu_levels, main_frame, int(block_height - play_button.get_height()))
+        submenu_levels.resize(main_frame.get_width(), main_frame.get_height())
         return submenu_levels
 
-    def add_widget_from_mywidget(self, my_wdg: MyWidget, menu: pygame_menu.Menu, trg_size: (int, int)) -> pygame_menu.widgets.Widget:
+    def add_widget_from_mywidget(self, my_wdg: MyWidget, menu: pygame_menu.Menu) -> pygame_menu.widgets.Widget:
         """
         Add a pygame widget to the menu based on the information in my_wdg
 
@@ -333,25 +353,40 @@ class Menu:
         """
         if isinstance(my_wdg, MyRangeSlider):
             wdg = menu.add.range_slider(my_wdg.title, my_wdg.default, (0, 1), 0.01, rangeslider_id=my_wdg.title, range_text_value_enabled=False, slider_text_value_enabled=False, value_format=lambda x: str(int(x * 100)), onchange=my_wdg.onchange)
-        elif isinstance(my_wdg, MyDropSelect):
-            wdg = menu.add.dropselect(my_wdg.title, my_wdg.items, default=0, dropselect_id=my_wdg.title, placeholder=my_wdg.items[0][0], placeholder_add_to_selection_box=False, onchange=my_wdg.onchange)
         elif isinstance(my_wdg, MyButton):
             wdg = menu.add.button(my_wdg.title, my_wdg.action)
+        elif isinstance(my_wdg, MyDropSelect):
+            wdg = menu.add.dropselect(my_wdg.title, my_wdg.items, default=0, dropselect_id=my_wdg.title, placeholder=my_wdg.items[0][0], placeholder_add_to_selection_box=False, onchange=my_wdg.onchange)
         elif isinstance(my_wdg, MySelector):
             wdg = menu.add.selector(my_wdg.title, my_wdg.items, my_wdg.default, selector_id=my_wdg.title, onchange=my_wdg.onchange, style=pygame_menu.widgets.SELECTOR_STYLE_CLASSIC)
         else:
             raise TypeError(f"Expected {type(MyWidget)}, got {type(my_wdg)} instead")
-        wdg = self.set_std_params(wdg, trg_size)
+        wdg = wdg.add_self_to_kwargs()
         return wdg
 
-    def set_std_params(self, wdg: pygame_menu.widgets.Widget, size: (int, int), font: pygame.font.Font = None, font_size: int = -1, enable_mouse_over_leave: bool = True) -> pygame_menu.widgets.Widget:
+    def add_back_button(self, menu: pygame_menu.Menu, frame: pygame_menu.widgets.Frame = None, margin: int = 0) -> pygame_menu.widgets.Button:
+        """Add a back button to the given menu in the given frame"""
+        button = self.set_std_params(self.add_widget_from_mywidget(MyButton("Back", self.click_on_back_button), menu), self.button_size)
+        assert isinstance(button, pygame_menu.widgets.Button)
+        if frame:
+            if margin > 0:
+                frame.pack(menu.add.vertical_margin(margin))
+            frame.pack(button, align=pygame_menu.locals.ALIGN_CENTER)
+        return button
+
+    def set_std_params(self, wdg: pygame_menu.widgets.Widget, size: (int, int), font: pygame_menu.font.FontType = None, font_size: int = -1, enable_mouse_over_leave: bool = True) -> pygame_menu.widgets.Widget:
         """Set some standard parameters for the given widget and return it"""
         wdg.set_padding(0)
         if enable_mouse_over_leave:
             wdg.set_onmouseover(self.mouse_over_widget)
             wdg.set_onmouseleave(self.mouse_leave_widget)
         wdg.set_selection_effect()
-        wdg.set_font(font if font else self.button_font, font_size if font_size > 0 else int(BUTTON_FONT_SIZE * self.scaling_factor), WHITE, WHITE, WHITE, WHITE, None, True)
+        wdg.set_font(font if font else self.button_std_font, font_size if font_size > 0 else self.font_size, WHITE, WHITE, WHITE, WHITE, None, True)
+        self.set_wdg_background(wdg, size)
+        return wdg
+
+    def set_wdg_background(self, wdg: pygame_menu.widgets.Widget, size: (int, int)):
+        """Set a widgets background in a standard way"""
         if isinstance(wdg, pygame_menu.widgets.Button):
             wdg_set_background(wdg, self.button_base_imgs[WidgetState.NORMAL], size)
         else:
@@ -364,6 +399,17 @@ class Menu:
         help_frame.pack(wdg, align=pygame_menu.locals.ALIGN_CENTER)
         help_frame.set_border(1, WHITE)
         return help_frame
+
+    def adjust_font_size_to_fit_trg_wdg_size(self, wdg: pygame_menu.widgets.Widget, trg_size: (int, int)) -> pygame_menu.widgets.Widget:
+        """Adjust the font size of the given widget until it fits into the given target size"""
+        cur_font_size = self.font_size
+        if wdg.get_font_info()["size"] != cur_font_size:
+            wdg.update_font({"size": cur_font_size})
+        while wdg.get_width() > trg_size[0] or wdg.get_height() > trg_size[1]:
+            cur_font_size -= 1
+            wdg.update_font({"size": cur_font_size})
+            # wdg.render()
+        return wdg
 
     def init_mini_menu_change_controls(self) -> pygame_menu.Menu:
         """Initialize the mini submenu for changing a snakes controls"""
@@ -456,19 +502,21 @@ class Menu:
         for key_id, key in enumerate(self.snake_controls[snake_id]):
             self.submenu_controls.get_widget(f"Widget{key_id + 1}{snake_id + 1}").set_title(key)
 
-    def change_music_volume(self, new_volume: float) -> None:
+    def change_music_volume(self, new_volume: float, **kwargs) -> None:
         """Change the music volume. The input param new_volume must be between 0.0 and 1.0."""
         pygame.mixer_music.set_volume(new_volume)
         self.music_volume = new_volume
 
-    def change_sound_volume(self, new_volume: float) -> None:
+    def change_sound_volume(self, new_volume: float, **kwargs) -> None:
         """Change the sound volume. The input param new_volume must be between 0.0 and 1.0."""
         self.sound_volume = new_volume
 
-    def start_new_game(self) -> None:
+    def start_new_game(self, **kwargs) -> None:
         """Start a new game"""
         self.exit = False
         self.start_game = True
+        if self.submenu_levels:
+            self.submenu_levels.disable()
 
     def click_on_play_button(self) -> None:
         """Start a new game"""
@@ -492,7 +540,7 @@ class Menu:
         self.exit = True
 
     def click_on_back_button(self, *args, **kwargs) -> None:
-        for submenu in [self.submenu_options, self.submenu_controls]:
+        for submenu in [self.submenu_options, self.submenu_controls, self.submenu_levels]:
             submenu.disable()
 
     def mouse_over_widget(self, widget: pygame_menu.widgets.Widget, event: pygame.event.Event) -> None:
@@ -516,13 +564,27 @@ class Menu:
     def change_num_players(self, sel_item_and_index, sel_value, **kwargs) -> None:
         """Change the number of players. Callback function for the resp. dropdown widget"""
         self.num_players = sel_value
+        if "widget" in kwargs and isinstance(wdg := kwargs["widget"], pygame_menu.widgets.Widget):
+            self.adjust_font_size_to_fit_trg_wdg_size(wdg, self.button_size)
+            self.set_wdg_background(wdg, self.button_size)
 
     def change_level(self, sel_item_and_index, sel_value, **kwargs) -> None:
         """Change the level. Callback function for the resp. selector widget"""
         self.level_idx = sel_value
-        wdg = self.submenu_levels.get_widget(LEVEL_PREV_IMG_ID)
-        assert isinstance(wdg, pygame_menu.widgets.Image), f"Expected Image type, got {type(wdg)} instead."
-        wdg.set_image(self.level_prev_imgs[self.level_idx])
+        if "widget" in kwargs and isinstance(wdg := kwargs["widget"], pygame_menu.widgets.Widget):
+            self.adjust_font_size_to_fit_trg_wdg_size(wdg, self.button_size)
+            self.set_wdg_background(wdg, self.button_size)
+        # Change level preview image
+        img_wdg = self.submenu_levels.get_widget(LEVEL_PREV_IMG_ID)
+        assert isinstance(img_wdg, pygame_menu.widgets.Image), f"Expected Image type, got {type(img_wdg)} instead."
+        img_wdg.set_image(self.level_prev_imgs[self.level_idx])
+
+    def get_infos(self) -> (int, int, float):
+        """
+        Return the params needed for outside the menu that might have been changed in the menu
+        :return: Tuple containing [0] the index of the selected level, [1] the number of players, [2] the sound volume
+        """
+        return self.level_idx, self.num_players, self.sound_volume
 
     def update_display(self) -> None:
         """Display the current state on the screen"""
