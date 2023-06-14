@@ -60,19 +60,24 @@ class Communicator:
                                self.scaling_factor,
                                self.lang,
                                TEXTS_BUTTON_START_MENU[self.lang],
-                               [level.name for level in self.levels])
+                               [level.name for level in self.levels],
+                               True)
         self.pause_menu = Menu(self.main_surface,
                                pygame.Rect(utils.mult_tuple_to_int(PAUSE_MENU_TOPLEFT, self.scaling_factor), utils.mult_tuple_to_int(PAUSE_MENU_SIZE, self.scaling_factor)),
                                None,
                                self.scaling_factor,
                                self.lang,
-                               TEXTS_BUTTON_PAUSE_MENU[self.lang])
+                               TEXTS_BUTTON_PAUSE_MENU[self.lang],
+                               None,
+                               False)
         self.game_over_menu = Menu(self.main_surface,
                                    pygame.Rect(utils.mult_tuple_to_int(PAUSE_MENU_TOPLEFT, self.scaling_factor), utils.mult_tuple_to_int(PAUSE_MENU_SIZE, self.scaling_factor)),
                                    None,
                                    self.scaling_factor,
                                    self.lang,
-                                   TEXTS_BUTTON_GAME_OVER_MENU[self.lang])
+                                   TEXTS_BUTTON_GAME_OVER_MENU[self.lang],
+                                   None,
+                                   False)
         self.set_start_screen()
         self.init_start_menu()
         self.game: Game
@@ -92,8 +97,8 @@ class Communicator:
         self.clock = pygame.time.Clock()
 
     def update_param_from_menu(self, menu: Menu) -> None:
-        """Get the relevant infos form the given menu and update the internal parameters"""
-        level_idx, num_players, new_sound_volume = menu.get_infos()
+        """Get the relevant infos from the given menu and update the internal parameters"""
+        level_idx, num_players, new_sound_volume, new_controls = menu.get_infos()
         if level_idx:
             self.level_idx = level_idx
             self.level = self.levels[self.level_idx]
@@ -106,6 +111,13 @@ class Communicator:
             for menu in [self.start_menu, self.pause_menu, self.game_over_menu]:
                 menu.set_sound_volume(new_sound_volume)
             self.sound_volume = new_sound_volume
+        if new_controls:
+            for menu in [self.start_menu, self.pause_menu, self.game_over_menu]:
+                menu.set_controls(new_controls)
+            orientations = [ORIENT_UP, ORIENT_LEFT, ORIENT_DOWN, ORIENT_RIGHT]
+            self.snake_controls = [{key: ori for key, ori in zip(controls, orientations)} for controls in new_controls]
+            for controls in self.snake_controls:
+                self.snake_controls_all.extend(controls.keys())
 
     def set_start_screen(self):
         self.main_surface.blit(self.start_bg_img, (0, 0))

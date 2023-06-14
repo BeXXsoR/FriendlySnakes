@@ -3,6 +3,7 @@
 import itertools
 import pygame
 from enum import Enum, Flag, auto
+import typing
 
 pygame.init()
 
@@ -154,10 +155,101 @@ def play_music_track(filename: str, volume: float = 1.0) -> None:
 	pygame.mixer_music.play(loops=-1)
 
 
-def get_char_for_pygame_key(pygame_key: int) -> str:
+def check_allowed_keys(pygame_key: int) -> bool:
 	"""Transform an int representing a pygame key constant to the corresponding char"""
-	descr = pygame.key.name(pygame_key, False)
-	return descr
+	# Check pygame_key against allowed keys
+	allowed_keys = [
+		pygame.K_a,
+		pygame.K_b,
+		pygame.K_c,
+		pygame.K_d,
+		pygame.K_e,
+		pygame.K_f,
+		pygame.K_g,
+		pygame.K_h,
+		pygame.K_i,
+		pygame.K_j,
+		pygame.K_k,
+		pygame.K_l,
+		pygame.K_m,
+		pygame.K_n,
+		pygame.K_o,
+		pygame.K_p,
+		pygame.K_q,
+		pygame.K_r,
+		pygame.K_s,
+		pygame.K_t,
+		pygame.K_u,
+		pygame.K_v,
+		pygame.K_w,
+		pygame.K_x,
+		pygame.K_y,
+		pygame.K_z,
+		228,
+		246,
+		252,
+		pygame.K_LESS,
+		pygame.K_COMMA,
+		pygame.K_PERIOD,
+		pygame.K_MINUS,
+		pygame.K_HASH,
+		pygame.K_PLUS,
+		pygame.K_CARET,
+		pygame.K_1,
+		pygame.K_2,
+		pygame.K_3,
+		pygame.K_4,
+		pygame.K_5,
+		pygame.K_6,
+		pygame.K_7,
+		pygame.K_8,
+		pygame.K_9,
+		pygame.K_0,
+		223,
+		180,
+		pygame.K_RIGHT,
+		pygame.K_DOWN,
+		pygame.K_LEFT,
+		pygame.K_UP,
+		pygame.K_KP_1,
+		pygame.K_KP_2,
+		pygame.K_KP_3,
+		pygame.K_KP_4,
+		pygame.K_KP_5,
+		pygame.K_KP_6,
+		pygame.K_KP_7,
+		pygame.K_KP_8,
+		pygame.K_KP_9,
+		pygame.K_KP_0,
+		pygame.K_KP_PERIOD,
+		pygame.K_KP_PLUS,
+		pygame.K_KP_DIVIDE,
+		pygame.K_KP_MULTIPLY,
+		pygame.K_KP_MINUS
+	]
+	return pygame_key in allowed_keys
+
+
+def get_descr_from_pygame_key(pygame_key: int) -> str:
+	"""Replace some pygame descriptions with smaller ones for a better visual"""
+	replace = {pygame.K_UP: "↑", pygame.K_DOWN: "↓", pygame.K_LEFT: "←", pygame.K_RIGHT: "→",
+			   pygame.K_KP_1: "KP1", pygame.K_KP_2: "KP2", pygame.K_KP_3: "KP3", pygame.K_KP_4: "KP4", pygame.K_KP_5: "KP5", pygame.K_KP_6: "KP6", pygame.K_KP_7: "KP7", pygame.K_KP_8: "KP8", pygame.K_KP_9: "KP9", pygame.K_KP_0: "KP0",
+			   pygame.K_KP_PERIOD: "KP.", pygame.K_KP_PLUS: "KP+", pygame.K_KP_DIVIDE: "KP/", pygame.K_KP_MULTIPLY: "KP*", pygame.K_KP_MINUS: "KP-",
+			   pygame.K_a: "A", pygame.K_b: "B", pygame.K_c: "C", pygame.K_d: "D", pygame.K_e: "E", pygame.K_f: "F", pygame.K_g: "G", pygame.K_h: "H", pygame.K_i: "I", pygame.K_j: "J", pygame.K_k: "K", pygame.K_l: "L", pygame.K_m: "M",
+			   pygame.K_n: "N", pygame.K_o: "O", pygame.K_p: "P", pygame.K_q: "Q", pygame.K_r: "R", pygame.K_s: "S", pygame.K_t: "T", pygame.K_u: "U", pygame.K_v: "V", pygame.K_w: "W", pygame.K_x: "X", pygame.K_y: "Y", pygame.K_z: "Z"}
+	return replace[pygame_key] if pygame_key in replace else pygame.key.name(pygame_key)
+	# descr = pygame.key.name(pygame_key)
+	# replace = {"Up": "↑", "Down": "↓", "Left": "←", "Right": "→", "up": "↑", "down": "↓", "left": "←", "right": "→",
+	# 		   "a": "A", "b": "B", "c": "C", "d": "D", "e": "E", "f": "F", "g": "G", "h": "H", "i": "I", "j": "J", "k": "K", "l": "L", "m": "M",
+	# 		   "n": "N", "o": "O", "p": "P", "q": "Q", "r": "R", "s": "S", "t": "T", "u": "U", "v": "V", "w": "W", "x": "X", "y": "Y", "z": "Z"}
+	# if descr in replace:
+	# 	return replace[descr]
+	# elif len(descr) >= 7 and descr[:6] == "Keypad":
+	# 	return "KP" + descr[-1]
+	# elif len(descr) == 3 and descr[0] == "[" and descr[2] == "]":
+	# 	return "KP" + descr[1]
+	# return descr
+
 
 def get_time_string_for_ms(ms: int) -> str:
 	"""Return a time string in format mm:ss for the given number of milliseconds"""

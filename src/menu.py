@@ -33,13 +33,17 @@ BLACK_TP = (0, 0, 0, 0)
 # FILENAMES_SNAKE = {GREEN: "../res/menu_snake_green.png", BLUE: "../res/menu_snake_blue.png",
 #                    CYAN: "../res/menu_snake_cyan.png", PINK: "../res/menu_snake_pink.png"}
 FILENAME_LVL_PREV = "../res/level_prev_{}.png"
+FILENAME_CONTROLS_BG = "../res/menu_controls_bg.png"
 FILENAME_MENU_FRAME = "../res/menu_frame.png"
 FILENAMES_BUTTON = {WidgetState.NORMAL: "../res/menu_button_normal.png", WidgetState.PUSHED: "../res/menu_button_pushed.png", WidgetState.HOVERED: "../res/menu_button_hovered.png"}
 COLOR_WIDGETS = {WidgetState.NORMAL: (76, 123, 209), WidgetState.HOVERED: (111, 164, 255)}
 BG_ITEMS = [("Desert", 0)]
 MUSIC_TRACK_ITEMS = [("Bells Song", 0)]
 NUM_PLAYER_ITEMS = [("1", 1), ("2", 2), ("3", 3), ("4", 4)]
+PLAYER_ITEMS = [("Player 1", 0), ("Player 2", 1), ("Player 3", 2), ("Player 4", 3)]
 LEVEL_PREV_IMG_ID = "Level_Prev_Img"
+CONTROLS_LABEL_IDS = ["Control_Up", "Control_Left", "Control_Down", "Control_Right"]
+CONTROLS_BG_IMG_ID = "Controls_Background"
 FPS = 60
 # benchmark screen: 2560x1440
 BUTTON_AREA_START = (36, 267)
@@ -48,10 +52,11 @@ BUTTON_HEIGHT = 50
 OPTIONS_TOP_MARGIN = 13
 MENU_AREA_START = (0.01, 0.3)
 BUTTON_FONT_SIZE = 25
+CONTROLS_FONT_SIZE = 35
 LEVEL_MENU_SIZE_FACTOR = 1
-# LEVEL_MENU_START = (0, 300)
-# LEVEL_MENU_SIZE = (1040, 740)
 LEVEL_PREV_IMG_SIZE = (115, 115)
+CONTROL_BG_IMG_SIZE = (200, 200)
+CONTROL_LBL_TO_BG_RATIO = 156 / 442
 # endregion
 
 
@@ -67,6 +72,7 @@ def wdg_set_background(widget: pygame_menu.widgets.Widget, bg_color, trg_size: (
         widget.set_background_color(bg_color, inflate=None)
 
 
+# region Side Classes
 # ----- Classes ------
 class BasicSprite(pygame.sprite.Sprite):
     """Sprite subclass for static elements"""
@@ -170,12 +176,14 @@ class MySelector:
 
 
 MyWidget = Union[MyRangeSlider, MyDropSelect, MyButton, MySelector]
+# endregion
 
 
 class Menu:
     """Class for the menu in the game"""
+
     def __init__(self, main_surface: pygame.Surface, rect: pygame.Rect, bg_img: pygame.Surface = None, scaling_factor: float = None,
-                 lang: utils.Language = utils.Language.ENGLISH, button_texts: [str] = None, level_names: [str] = None):
+                 lang: utils.Language = utils.Language.ENGLISH, button_texts: [str] = None, level_names: [str] = None, enable_controls_change: bool = True):
         """
         Initialize the menu.
 
@@ -194,7 +202,12 @@ class Menu:
         # self.snake_names = ["Kokosnuss", "Tiger", "Muh", "Mausi"]
         self.snake_names = ["Ko", "Ti", "Mu", "Ma"]
         self.snake_colors = [GREEN, BLUE, CYAN, PINK]
-        self.snake_controls = [["↑", "←", "↓", "→"], ["W", "A", "S", "D"], ["8", "4", "5", "6"], ["I", "J", "K", "L"]]
+        # self.snake_controls = [["↑", "←", "↓", "→"], ["W", "A", "S", "D"], ["8", "4", "5", "6"], ["I", "J", "K", "L"]]
+        self.snake_controls = [
+            [pygame.K_UP, pygame.K_LEFT, pygame.K_DOWN, pygame.K_RIGHT],
+            [pygame.K_w, pygame.K_a, pygame.K_s, pygame.K_d],
+            [pygame.K_KP8, pygame.K_KP4, pygame.K_KP5, pygame.K_KP6],
+            [pygame.K_i, pygame.K_j, pygame.K_k, pygame.K_l]]
         self.scaling_factor = scaling_factor if scaling_factor else main_surface.get_height() / BENCHMARK_HEIGHT
         # Background
         self.bg_img = bg_img
@@ -225,15 +238,17 @@ class Menu:
         self.on_click_functions = [self.click_on_play_button, self.click_on_profile_button, self.click_on_controls_button, self.click_on_options_button, self.click_on_exit_button]
         self.buttons = [Clickable(self.button_imgs[WidgetState.NORMAL], rect, func) for rect, func in zip(self.button_rects, self.on_click_functions)]
         self.button_group = ClickableGroup(*self.buttons)
+        self.clock = pygame.time.Clock()
+        # Submenus options, controls and levels
         self.music_volume = pygame.mixer_music.get_volume()
         self.sound_volume = 1.0
         self.cur_track_idx = 0
         self.cur_bg_idx = 0
-        self.clock = pygame.time.Clock()
-        # Submenu Options
         self.submenu_options = self.init_submenu_options()
-        # self.submenu_controls = self.init_submenu_controls()
-        self.submenu_controls = self.init_submenu_options()
+        self.controls_bg_img = pygame_menu.BaseImage(image_path=FILENAME_CONTROLS_BG, drawing_mode=pygame_menu.baseimage.IMAGE_MODE_FILL).resize(*(utils.mult_tuple_to_int(CONTROL_BG_IMG_SIZE, self.scaling_factor)))
+        self.sel_player_id_in_submenu_controls = 0
+        self.submenu_controls = self.init_submenu_controls(enable_controls_change)
+        # self.submenu_controls = self.init_submenu_options()
         self.level_prev_imgs = None
         self.submenu_levels = None
         if level_names:
@@ -264,52 +279,89 @@ class Menu:
             self.set_std_params(cur_wdg, self.button_size)
             options_frame.pack(cur_wdg, align=pygame_menu.locals.ALIGN_CENTER)
             options_frame.pack(submenu_options.add.vertical_margin(red_block_height - cur_wdg.get_height()))
-        # options_frame.pack(submenu_options.add.vertical_margin((1 - red_block_rate) * len(my_widgets) * block_height))
         self.add_back_button(submenu_options, options_frame, int((1 - red_block_rate) * len(my_widgets) * block_height))
         submenu_options.resize(options_frame.get_width(), options_frame.get_height())
         return submenu_options
 
-    def init_submenu_controls(self) -> pygame_menu.Menu:
-        """Initialize and return the submenu for the controls"""
-        font = pygame.font.SysFont("segoeuisymbol", int(BUTTON_FONT_SIZE * self.scaling_factor))
-        menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=font, widget_font_antialias=True, widget_font_color=WHITE)
+    def init_submenu_controls(self, enable_controls_change: bool) -> pygame_menu.Menu:
+        """Init the submenu for the controls"""
+        menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=self.button_std_font, widget_font_antialias=True, widget_font_color=WHITE)
         buttons_offset = self.buttons_surf.get_abs_offset()
-        submenu_controls = pygame_menu.Menu("Controls", self.buttons_area_rect.w, self.buttons_area_rect.h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=menu_theme)
-        main_frame = submenu_controls.add.frame_v(submenu_controls.get_width(), submenu_controls.get_height(), padding=0)
-        cols_frame = submenu_controls.add.frame_h(main_frame.get_width(), 0.9 * main_frame.get_height(), padding=0)
-        rows_frames = [submenu_controls.add.frame_v(int(cols_frame.get_width() / 5), cols_frame.get_height(), padding=0) for _ in range(4)]
-        first_col = submenu_controls.add.frame_v(int(cols_frame.get_width() / 5), cols_frame.get_height(), padding=0)
-        margin = 20
-        for text in ["Player", "Up", "Left", "Down", "Right"]:
-            label = submenu_controls.add.label(text, padding=0)
-            row_height = label.get_height()
-            self.set_std_params(label, (first_col.get_width(), row_height), font=font, enable_mouse_over_leave=False)
-            help_frame = self.set_help_frame_around_wdg(submenu_controls, label, (first_col.get_width(), row_height))
-            first_col.pack(help_frame, align=pygame_menu.locals.ALIGN_CENTER)
-            if text == "Player":
-                first_col.pack(submenu_controls.add.vertical_margin(margin))
-        cols_frame.pack(first_col, align=pygame_menu.locals.ALIGN_CENTER)
-        for snake_id, (frame, controls, name) in enumerate(zip(rows_frames, self.snake_controls, ["Pl. 1", "Pl. 2", "Pl. 3", "Pl. 4"])):
-            label = submenu_controls.add.label(name, padding=0)
-            self.set_std_params(label, (frame.get_width(), row_height), font=font)
-            help_frame = self.set_help_frame_around_wdg(submenu_controls, label, (frame.get_width(), row_height))
-            frame.pack(help_frame, align=pygame_menu.locals.ALIGN_CENTER)
-            frame.pack(submenu_controls.add.vertical_margin(margin))
-            for key_id, key in enumerate(controls):
-                label = submenu_controls.add.label(key, label_id=f"Widget{key_id + 1}{snake_id + 1}")
-                self.set_std_params(label, (frame.get_width(), row_height), font=font, enable_mouse_over_leave=False)
-                help_frame = self.set_help_frame_around_wdg(submenu_controls, label, (frame.get_width(), row_height))
-                frame.pack(help_frame, align=pygame_menu.locals.ALIGN_CENTER)
-            change_button = submenu_controls.add.button("Change", action=self.change_controls, accept_kwargs=True, snake_id=snake_id)
-            self.set_std_params(change_button, (frame.get_width(), row_height), font=font)
-            help_frame = self.set_help_frame_around_wdg(submenu_controls, change_button, (frame.get_width(), row_height))
-            frame.pack(submenu_controls.add.vertical_margin(margin))
-            frame.pack(help_frame, align=pygame_menu.locals.ALIGN_CENTER)
-            cols_frame.pack(frame, align=pygame_menu.locals.ALIGN_CENTER)
-        main_frame.pack(cols_frame, align=pygame_menu.locals.ALIGN_CENTER)
-        main_frame.pack(self.set_std_params(submenu_controls.add.button("Back", self.click_on_back_button), self.button_size), align=pygame_menu.locals.ALIGN_CENTER)
+        submenu_controls = pygame_menu.Menu("Options", self.buttons_area_rect.w, self.buttons_area_rect.h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=menu_theme)
+        sel_player = self.add_widget_from_mywidget(MySelector("", PLAYER_ITEMS, self.sel_player_id_in_submenu_controls, self.change_player_in_submenu_controls), submenu_controls)
+        control_bg_img = submenu_controls.add.image(self.controls_bg_img, image_id=CONTROLS_BG_IMG_ID, padding=0)
+        control_labels = [submenu_controls.add.label(utils.get_descr_from_pygame_key(pygame_key), label_id=lbl_id, padding=0, font_name=FONT_SEGOE, font_size=int(CONTROLS_FONT_SIZE * self.scaling_factor), float=True)
+                          for pygame_key, lbl_id in zip(self.snake_controls[self.sel_player_id_in_submenu_controls], CONTROLS_LABEL_IDS)]
+        change_button = self.add_widget_from_mywidget(MyButton("Change", self.change_controls), submenu_controls)
+        self.set_std_params(sel_player, self.button_size, self.button_font_name, self.font_size, True)
+        self.set_std_params(change_button, utils.mult_tuple_to_int(change_button.get_size(), 1.1), self.button_font_name, self.font_size, True)
+        free_space = int((submenu_controls.get_height() - 3 * self.button_size[1] - control_bg_img.get_height()) / 3)
+        block_height = self.button_size[1] + free_space
+        top_margin = int(OPTIONS_TOP_MARGIN * self.scaling_factor)
+        main_frame = submenu_controls.add.frame_v(self.buttons_area_rect.w, self.buttons_area_rect.h + 2 * top_margin, padding=0)
+        main_frame.pack(submenu_controls.add.vertical_margin(top_margin))
+        main_frame.pack(sel_player, align=pygame_menu.locals.ALIGN_CENTER)
+        main_frame.pack(submenu_controls.add.vertical_margin(max(1, block_height - sel_player.get_height())))
+        main_frame.pack(control_bg_img, align=pygame_menu.locals.ALIGN_CENTER)
+        # The center of a label part is [156/442 * image_width] away from the center of the image
+        img_centerx, img_centery = control_bg_img.get_rect().center
+        diff = int(CONTROL_LBL_TO_BG_RATIO * control_bg_img.get_width())
+        trg_centers = [(img_centerx, img_centery - diff), (img_centerx - diff, img_centery), (img_centerx, img_centery + diff), (img_centerx + diff, img_centery)]
+        for lbl, trg_center in zip(control_labels, trg_centers):
+            main_frame.pack(lbl, align=pygame_menu.locals.ALIGN_CENTER)
+            lbl.translate(*utils.subtract_tuples_int(trg_center, lbl.get_rect().center))
+        main_frame.pack(submenu_controls.add.vertical_margin(max(1, int(0.5 * (block_height - change_button.get_height())))))
+        main_frame.pack(change_button, align=pygame_menu.locals.ALIGN_CENTER)
+        self.add_back_button(submenu_controls, main_frame, max(1, int(1.0 * (block_height - change_button.get_height()))))
+        if not enable_controls_change:
+            assert isinstance(sel_player, pygame_menu.widgets.Selector), f"Expected selector, got {type(sel_player)} instead."
+            sel_player.update_items(PLAYER_ITEMS[:self.num_players])
+            change_button.hide()
+        # main_frame.pack(submenu_controls.add.vertical_margin(top_margin))
         submenu_controls.resize(main_frame.get_width(), main_frame.get_height())
         return submenu_controls
+
+    # def init_submenu_controls(self) -> pygame_menu.Menu:
+    #     """Initialize and return the submenu for the controls"""
+    #     font = pygame.font.SysFont("segoeuisymbol", int(BUTTON_FONT_SIZE * self.scaling_factor))
+    #     menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=font, widget_font_antialias=True, widget_font_color=WHITE)
+    #     buttons_offset = self.buttons_surf.get_abs_offset()
+    #     submenu_controls = pygame_menu.Menu("Controls", self.buttons_area_rect.w, self.buttons_area_rect.h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=menu_theme)
+    #     main_frame = submenu_controls.add.frame_v(submenu_controls.get_width(), submenu_controls.get_height(), padding=0)
+    #     cols_frame = submenu_controls.add.frame_h(main_frame.get_width(), 0.9 * main_frame.get_height(), padding=0)
+    #     rows_frames = [submenu_controls.add.frame_v(int(cols_frame.get_width() / 5), cols_frame.get_height(), padding=0) for _ in range(4)]
+    #     first_col = submenu_controls.add.frame_v(int(cols_frame.get_width() / 5), cols_frame.get_height(), padding=0)
+    #     margin = 20
+    #     for text in ["Player", "Up", "Left", "Down", "Right"]:
+    #         label = submenu_controls.add.label(text, padding=0)
+    #         row_height = label.get_height()
+    #         self.set_std_params(label, (first_col.get_width(), row_height), font=font, enable_mouse_over_leave=False)
+    #         help_frame = self.set_help_frame_around_wdg(submenu_controls, label, (first_col.get_width(), row_height))
+    #         first_col.pack(help_frame, align=pygame_menu.locals.ALIGN_CENTER)
+    #         if text == "Player":
+    #             first_col.pack(submenu_controls.add.vertical_margin(margin))
+    #     cols_frame.pack(first_col, align=pygame_menu.locals.ALIGN_CENTER)
+    #     for snake_id, (frame, controls, name) in enumerate(zip(rows_frames, self.snake_controls, ["Pl. 1", "Pl. 2", "Pl. 3", "Pl. 4"])):
+    #         label = submenu_controls.add.label(name, padding=0)
+    #         self.set_std_params(label, (frame.get_width(), row_height), font=font)
+    #         help_frame = self.set_help_frame_around_wdg(submenu_controls, label, (frame.get_width(), row_height))
+    #         frame.pack(help_frame, align=pygame_menu.locals.ALIGN_CENTER)
+    #         frame.pack(submenu_controls.add.vertical_margin(margin))
+    #         for key_id, key in enumerate(controls):
+    #             label = submenu_controls.add.label(key, label_id=f"Widget{key_id + 1}{snake_id + 1}")
+    #             self.set_std_params(label, (frame.get_width(), row_height), font=font, enable_mouse_over_leave=False)
+    #             help_frame = self.set_help_frame_around_wdg(submenu_controls, label, (frame.get_width(), row_height))
+    #             frame.pack(help_frame, align=pygame_menu.locals.ALIGN_CENTER)
+    #         change_button = submenu_controls.add.button("Change", action=self.change_controls, accept_kwargs=True, snake_id=snake_id)
+    #         self.set_std_params(change_button, (frame.get_width(), row_height), font=font)
+    #         help_frame = self.set_help_frame_around_wdg(submenu_controls, change_button, (frame.get_width(), row_height))
+    #         frame.pack(submenu_controls.add.vertical_margin(margin))
+    #         frame.pack(help_frame, align=pygame_menu.locals.ALIGN_CENTER)
+    #         cols_frame.pack(frame, align=pygame_menu.locals.ALIGN_CENTER)
+    #     main_frame.pack(cols_frame, align=pygame_menu.locals.ALIGN_CENTER)
+    #     main_frame.pack(self.set_std_params(submenu_controls.add.button("Back", self.click_on_back_button), self.button_size), align=pygame_menu.locals.ALIGN_CENTER)
+    #     submenu_controls.resize(main_frame.get_width(), main_frame.get_height())
+    #     return submenu_controls
 
     def init_submenu_level_selection(self, level_names: [str]) -> pygame_menu.Menu:
         """Init the submenu for the level and player number selection screen"""
@@ -324,7 +376,7 @@ class Menu:
         level_img = submenu_levels.add.image(self.level_prev_imgs[self.level_idx], image_id=LEVEL_PREV_IMG_ID, padding=0)
         free_space = (submenu_levels.get_height() - 4 * self.button_size[1] - level_img.get_height()) / 4
         block_height = self.button_size[1] + free_space
-        top_margin = OPTIONS_TOP_MARGIN * self.scaling_factor
+        top_margin = int(OPTIONS_TOP_MARGIN * self.scaling_factor)
         main_frame = submenu_levels.add.frame_v(submenu_levels.get_width(), int(4 * block_height + level_img.get_height() + 2 * top_margin), padding=0)
         main_frame.pack(submenu_levels.add.vertical_margin(top_margin))
         red_block_rate = 0.875
@@ -413,9 +465,19 @@ class Menu:
 
     def init_mini_menu_change_controls(self) -> pygame_menu.Menu:
         """Initialize the mini submenu for changing a snakes controls"""
-        menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=pygame.font.SysFont("segoeuisymbol", int(BUTTON_FONT_SIZE * self.scaling_factor)), widget_font_antialias=True, widget_font_color=WHITE)
+        menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font_antialias=True, widget_font_color=WHITE)
         mini_menu = pygame_menu.Menu("Change Controls", 500, 500, position=(500, 500, False), enabled=False, theme=menu_theme)
-        label = mini_menu.add.label("", label_id="TextLabel")
+        text_label = mini_menu.add.label("", label_id="TextLabel", align=pygame_menu.locals.ALIGN_CENTER)
+        msg_label = mini_menu.add.label("Key not supported. Try again.", label_id="MsgLabel", align=pygame_menu.locals.ALIGN_CENTER)
+        self.set_std_params(text_label, self.button_size, FONT_SEGOE, int(CONTROLS_FONT_SIZE * self.scaling_factor), False)
+        vert_marg = mini_menu.add.vertical_margin(15 * self.scaling_factor)
+        self.set_std_params(msg_label, self.button_size, FONT_SEGOE, int(0.75 * self.font_size), False)
+        main_frame = mini_menu.add.frame_v(mini_menu.get_rect().w, text_label.get_height() + msg_label.get_height() + vert_marg.get_height(), padding=0)
+        main_frame.pack(text_label, align=pygame_menu.locals.ALIGN_CENTER)
+        main_frame.pack(vert_marg)
+        main_frame.pack(msg_label, align=pygame_menu.locals.ALIGN_CENTER)
+        msg_label.hide()
+        mini_menu.resize(*main_frame.get_size())
         return mini_menu
 
     def reset(self):
@@ -476,31 +538,53 @@ class Menu:
 
     def change_controls(self, **kwargs) -> None:
         """Change keys for controlling a snake"""
-        snake_id = kwargs["snake_id"]
         self.submenu_controls.disable()
         self.mini_menu_change_controls.enable()
+        # self.mini_menu_change_controls.set_title(f"Player {self.sel_player_id_in_submenu_controls + 1}")
         directions = ["Up", "Left", "Down", "Right"]
         keys = []
-        label = self.mini_menu_change_controls.get_widget("TextLabel")
+        text_label = self.mini_menu_change_controls.get_widget("TextLabel")
+        msg_label = self.mini_menu_change_controls.get_widget("MsgLabel")
         for direction in directions:
-            label.set_title(f"Player {snake_id + 1}: Press key for <{direction}>")
-            self.set_std_params(label, label.get_size())
+            text_label.set_title(f"Player {self.sel_player_id_in_submenu_controls + 1}: Press key for <{direction}>")
+            self.set_std_params(text_label, self.button_size, FONT_SEGOE, self.font_size, False)
+            if direction == "Up":
+                # self.mini_menu_change_controls.resize(*utils.mult_tuple_to_int(text_label.get_size(), 1.2))
+                if (cur_center := self.mini_menu_change_controls.get_rect().center) != (trg_center := self.main_surface.get_rect().center):
+                    self.mini_menu_change_controls.translate(*utils.subtract_tuples_int(trg_center, cur_center))
             self.update_display()
             pressed_key = False
             while not pressed_key:
                 for event in pygame.event.get():
-                    if event.type == pygame.KEYDOWN and (char := utils.get_char_for_pygame_key(event.key)):
-                        keys.append(char)
+                    if event.type == pygame.KEYDOWN and (is_allowed := utils.check_allowed_keys(event.key)):
+                        keys.append(event.key)
                         pressed_key = True
-        self.snake_controls[snake_id] = keys
-        self.update_submenu_controls(snake_id)
+                        if msg_label.is_visible():
+                            msg_label.hide()
+                    elif event.type == pygame.KEYDOWN and not is_allowed:
+                        if not msg_label.is_visible():
+                            msg_label.show()
+                    self.update_display()
+        self.snake_controls[self.sel_player_id_in_submenu_controls] = keys
+        self.update_submenu_controls()
         self.mini_menu_change_controls.disable()
         self.submenu_controls.enable()
 
-    def update_submenu_controls(self, snake_id: int) -> None:
+    def update_submenu_controls(self) -> None:
         """Update the key representation in the controls submenu when new controls for a snake got defined"""
-        for key_id, key in enumerate(self.snake_controls[snake_id]):
-            self.submenu_controls.get_widget(f"Widget{key_id + 1}{snake_id + 1}").set_title(key)
+        if hasattr(self, "submenu_controls"):
+            bg_img = self.submenu_controls.get_widget(CONTROLS_BG_IMG_ID)
+            img_centerx, img_centery = bg_img.get_rect().center
+            diff = int(CONTROL_LBL_TO_BG_RATIO * bg_img.get_width())
+            trg_centers = [(img_centerx, img_centery - diff), (img_centerx - diff, img_centery), (img_centerx, img_centery + diff), (img_centerx + diff, img_centery)]
+            for lbl_id, pygame_key, trg_center in zip(CONTROLS_LABEL_IDS, self.snake_controls[self.sel_player_id_in_submenu_controls], trg_centers):
+                lbl = self.submenu_controls.get_widget(lbl_id)
+                lbl.set_title(utils.get_descr_from_pygame_key(pygame_key))
+                if (cur_center := lbl.get_rect().center) != trg_center:
+                    cur_translate = lbl.get_translate()
+                    add_translate = utils.subtract_tuples_int(trg_center, cur_center)
+                    lbl.translate(*utils.add_two_tuples(cur_translate, add_translate))
+
 
     def change_music_volume(self, new_volume: float, **kwargs) -> None:
         """Change the music volume. The input param new_volume must be between 0.0 and 1.0."""
@@ -581,21 +665,31 @@ class Menu:
         assert isinstance(img_wdg, pygame_menu.widgets.Image), f"Expected Image type, got {type(img_wdg)} instead."
         img_wdg.set_image(self.level_prev_imgs[self.level_idx])
 
-    def set_sound_volume(self, volume):
+    def change_player_in_submenu_controls(self, sel_item_and_index, sel_value, **kwargs) -> None:
+        """Change the player whose controls are displayed in the controls submenu. Callback function for the resp. selector widget"""
+        self.sel_player_id_in_submenu_controls = sel_value
+        self.update_submenu_controls()
+
+    def set_sound_volume(self, volume: float):
         """Set the given volume as the default value for the sound volume widget"""
         if 0 <= volume <= 1:
             self.sound_volume = volume
             self.submenu_options.get_widget("Sound volume").set_default_value(self.sound_volume)
 
-    def get_infos(self) -> (int, int, float):
+    def set_controls(self, controls: [[int, int, int, int]]):
+        """Update the snake controls in the menu"""
+        self.snake_controls = controls
+        self.update_submenu_controls()
+
+    def get_infos(self) -> (int, int, float, [[int, int, int, int]]):
         """
         Return the params needed for outside the menu that might have been changed in the menu
-        :return: Tuple containing [0] the index of the selected level, [1] the number of players, [2] the sound volume
+        :return: Tuple containing [0] the index of the selected level, [1] the number of players, [2] the sound volume, [3] the controls of all four players
         """
         if self.submenu_levels:
-            return self.level_idx, self.num_players, self.sound_volume
+            return self.level_idx, self.num_players, self.sound_volume, self.snake_controls
         else:
-            return None, None, self.sound_volume
+            return None, None, self.sound_volume, self.snake_controls
 
     def update_display(self) -> None:
         """Display the current state on the screen"""
@@ -607,10 +701,13 @@ class Menu:
             self.submenu_options.draw(self.main_surface)
         elif self.submenu_controls.is_enabled():
             self.submenu_controls.draw(self.main_surface)
+        elif self.mini_menu_change_controls.is_enabled():
+            self.submenu_controls.enable()
+            self.submenu_controls.draw(self.main_surface)
+            self.submenu_controls.disable()
+            self.mini_menu_change_controls.draw(self.main_surface)
         elif self.submenu_levels and self.submenu_levels.is_enabled():
             self.submenu_levels.draw(self.main_surface)
-        elif self.mini_menu_change_controls.is_enabled():
-            self.mini_menu_change_controls.draw(self.main_surface)
         else:
             self.button_group.draw(self.buttons_surf)
             for rect, text in zip(self.button_rects, self.button_texts_rend):

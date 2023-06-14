@@ -68,12 +68,13 @@ SNAKE_INFO_FONT_SIZE = 40
 SCORE_FONT_SIZE = 40
 BG_ITEMS = [("Desert", 0)]
 MUSIC_TRACK_ITEMS = [("Bells Song", 0)]
-TEXTS_BUTTON_START_MENU = {utils.Language.GERMAN: ["Spielen", "Profil wählen", "Steuerung", "Optionen", "Verlassen"],
-						   utils.Language.ENGLISH: ["Play", "Choose profile", "Controls", "Options", "Exit"]}
+TEXTS_BUTTON_START_MENU = {utils.Language.GERMAN: ["Neues Spiel", "Profil wählen", "Steuerung", "Optionen", "Verlassen"],
+						   utils.Language.ENGLISH: ["New game", "Choose profile", "Controls", "Options", "Exit"]}
 TEXTS_BUTTON_PAUSE_MENU = {utils.Language.GERMAN: ["Fortsetzen", "", "Steuerung", "Optionen", "Zurück zum Hauptmenü"],
 						   utils.Language.ENGLISH: ["Resume", "", "Controls", "Options", "Back to main menu"]}
 TEXTS_BUTTON_GAME_OVER_MENU = {utils.Language.GERMAN: ["Erneut spielen", "", "Steuerung", "Optionen", "Zurück zum Hauptmenü"],
 						   utils.Language.ENGLISH: ["Play again", "", "Controls", "Options", "Back to main menu"]}
+FONT_SEGOE = "segoeuisymbol"
 # benchmark screen: 2560x1440
 BENCHMARK_WIDTH = 2560
 BENCHMARK_HEIGHT = 1440
