@@ -6,7 +6,7 @@ A stand-alone installer can be found here: <Add GitHub repo for installer>
 TODO: Add info about installer (different GitHub repo)
 
 ## How To Play
-The game is played on one device. Each player controls their snake with four keyboard keys. The default keys are shown below. To customize the keys, choose "Controls" in the start or in-game menu.
+The game is played on one device. Each player controls their snake with four keyboard keys. The default keys are shown below. To customize the keys, choose "Controls" in the start menu.
 
 |Action|Player 1|Player 2|Player 3|Player 4|
 |:-----|:------:|:------:|:------:|:------:|
@@ -21,8 +21,8 @@ Each snake moves with a certain speed that can be affected by items like coffee 
 Here is an overview about the various items in the game:
 - Apple: Grow the snake by 1
 - Watermelon: Grow the snake by 3
-- Coffee: Double the snakes speed
-- Tea: Halve the snakes speed
+- Coffee: Increase the snakes speed by 3
+- Tea: Decrease the snakes speed speed by 3
 - Beer: Reverse the snakes controls for ten seconds (i.e. switch up<->down and left<->right)
 - Chili: Uh-Oh. The snake can't handle so much spice. For three seconds, the snakes mouth will get hotter and hotter. After that, the snake will spit fire for two seconds. If it burns another snake or itself, the game is over.
 - Bomb: Get the hell outta here! The bomb explodes after nine seconds, burning everything in a 3x3 square around it. If a snake is in that square or enters it while the explosion is still firing, the game is over.

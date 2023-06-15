@@ -3,6 +3,7 @@ import copy
 
 # ----- Imports --------
 import utils
+import typing
 import pygame
 from constants import DROP_ITEM_RATE
 
@@ -16,8 +17,8 @@ class Level:
 	"""The class for the levels"""
 
 	def __init__(self, level_info: {}):
-		"""Initialize  the level object"""
-		self.name = None
+		"""Initialize the level object"""
+		self.name = ""
 		self.id = None
 		self.orig_map = []
 		self.map = []
@@ -27,7 +28,8 @@ class Level:
 		self.goal = utils.Goals.NONE
 		self.target = None
 		self.bg = None
-		self.profiles = {}
+		self.highscore = []
+
 		for k, v in level_info.items():
 			if k == "map":
 				self.orig_map = utils.strings_to_objects(v)
@@ -37,7 +39,7 @@ class Level:
 				self.bg = utils.Backgrounds[v]
 			elif k == "goal":
 				self.goal = utils.Goals[v]
-			else:
+			elif hasattr(self, k):
 				setattr(self, k, v)
 		self.num_cols = len(self.map)
 		self.num_rows = len(self.map[0])

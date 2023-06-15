@@ -32,7 +32,7 @@
 		"goal": "HIGHSCORE",
 		"target": 100,
 		"bg": "DESERT",
-		"profiles": {}
+		"highscore": []
 	},
 	{
 		"name": "Holy Cross",
@@ -67,7 +67,7 @@
 		"goal": "HIGHSCORE",
 		"target": 100,
 		"bg": "DESERT",
-		"profiles": {}
+		"highscore": []
 	},
 	{
 		"name": "Running In Circles",
@@ -102,7 +102,7 @@
 		"goal": "HIGHSCORE",
 		"target": 150,
 		"bg": "DESERT",
-		"profiles": {}
+		"highscore": []
 	},
 	{
 		"name": "Entry At Own Risk",
@@ -137,7 +137,7 @@
 		"goal": "SURVIVE",
 		"target": 180,
 		"bg": "DESERT",
-		"profiles": {}
+		"highscore": []
 	},
 	{
 		"name": "Labyrinths",
@@ -172,7 +172,7 @@
 		"goal": "HIGHSCORE",
 		"target": 300,
 		"bg": "DESERT",
-		"profiles": {}
+		"highscore": []
 	},
 	{
 		"name": "Stairway To Heaven",
@@ -208,7 +208,7 @@
 		"goal": "SURVIVE",
 		"target": 180,
 		"bg": "DESERT",
-		"profiles": {}
+		"highscore": []
 	},
 	{
 		"name": "Devil In Disguise",
@@ -244,7 +244,7 @@
 		"goal": "SURVIVE",
 		"target": 120,
 		"bg": "DESERT",
-		"profiles": {}
+		"highscore": []
 	},
 	{
 		"name": "Smile, please!",
@@ -280,7 +280,7 @@
 		"goal": "HIGHSCORE",
 		"target": 500,
 		"bg": "DESERT",
-		"profiles": {}
+		"highscore": [["Tralalalalala", 20], ["12345678901234567890", 4000]]
 	},
 	{
 		"name": "Christmas Apples",
@@ -316,7 +316,7 @@
 		"goal": "SURVIVE",
 		"target": 180,
 		"bg": "DESERT",
-		"profiles": {}
+		"highscore": [["Ben", 3700], ["Katja", 3599], ["Thomas und Katja", 5]]
 	},
 	{
 		"name": "No Wrong Turns",
@@ -351,6 +351,6 @@
 		"goal": "HIGHSCORE",
 		"target": 500,
 		"bg": "DESERT",
-		"profiles": {}
+		"highscore": [["Thomas", 100]]
 	}
 ]

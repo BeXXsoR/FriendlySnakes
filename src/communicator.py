@@ -49,6 +49,7 @@ class Communicator:
         self.level_idx = 0
         self.levels = []
         self.read_level_infos()
+        self.highscores = [level.highscore for level in self.levels]
         self.level = self.levels[self.level_idx]
         utils.play_music_track(FILENAMES_MUSIC_TRACKS[0], 0.1)
         self.sound_volume = 1.0
@@ -61,6 +62,8 @@ class Communicator:
                                self.lang,
                                TEXTS_BUTTON_START_MENU[self.lang],
                                [level.name for level in self.levels],
+                               self.get_highscores_for_display(),
+                               True,
                                True)
         self.pause_menu = Menu(self.main_surface,
                                pygame.Rect(utils.mult_tuple_to_int(PAUSE_MENU_TOPLEFT, self.scaling_factor), utils.mult_tuple_to_int(PAUSE_MENU_SIZE, self.scaling_factor)),
@@ -68,7 +71,9 @@ class Communicator:
                                self.scaling_factor,
                                self.lang,
                                TEXTS_BUTTON_PAUSE_MENU[self.lang],
-                               None,
+                               [level.name for level in self.levels],
+                               self.get_highscores_for_display(),
+                               False,
                                False)
         self.game_over_menu = Menu(self.main_surface,
                                    pygame.Rect(utils.mult_tuple_to_int(PAUSE_MENU_TOPLEFT, self.scaling_factor), utils.mult_tuple_to_int(PAUSE_MENU_SIZE, self.scaling_factor)),
@@ -76,7 +81,9 @@ class Communicator:
                                    self.scaling_factor,
                                    self.lang,
                                    TEXTS_BUTTON_GAME_OVER_MENU[self.lang],
-                                   None,
+                                   [level.name for level in self.levels],
+                                   self.get_highscores_for_display(),
+                                   False,
                                    False)
         self.set_start_screen()
         self.init_start_menu()
@@ -268,6 +275,10 @@ class Communicator:
         """Stop all item sounds"""
         for sound in self.item_sounds.values():
             sound.stop()
+
+    def get_highscores_for_display(self) -> [(str, str)]:
+        """Return the highscores in a displayable format, i.e. for time-levels, change the score to a time format"""
+        return [[(name, str(score) if level.goal == utils.Goals.HIGHSCORE else utils.get_time_string_for_ms(score * 1000)) for (name, score) in highscore] for highscore, level in zip(self.highscores, self.levels)]
 
     def show_map(self):
         is_running = True

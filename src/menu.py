@@ -1,10 +1,11 @@
 """Classes for all the menus in the game"""
-
+import itertools
 # import utils
 from enum import Enum
 from dataclasses import dataclass
 from typing import Callable, Union
 from constants import *
+from level import Level
 import pygame
 import pygame_menu
 
@@ -42,8 +43,10 @@ MUSIC_TRACK_ITEMS = [("Bells Song", 0)]
 NUM_PLAYER_ITEMS = [("1", 1), ("2", 2), ("3", 3), ("4", 4)]
 PLAYER_ITEMS = [("Player 1", 0), ("Player 2", 1), ("Player 3", 2), ("Player 4", 3)]
 LEVEL_PREV_IMG_ID = "Level_Prev_Img"
-CONTROLS_LABEL_IDS = ["Control_Up", "Control_Left", "Control_Down", "Control_Right"]
+CONTROLS_LABEL_IDS = ("Control_Up", "Control_Left", "Control_Down", "Control_Right")
 CONTROLS_BG_IMG_ID = "Controls_Background"
+# HIGHSCORE_LBL_IDS = (("Name1", "Score1"), ("Name2", "Score2"), ("Name3", "Score3"))
+HIGHSCORE_LBL_IDS = ("Highscore1", "Highscore2", "Highscore3")
 FPS = 60
 # benchmark screen: 2560x1440
 BUTTON_AREA_START = (36, 267)
@@ -57,6 +60,7 @@ LEVEL_MENU_SIZE_FACTOR = 1
 LEVEL_PREV_IMG_SIZE = (115, 115)
 CONTROL_BG_IMG_SIZE = (200, 200)
 CONTROL_LBL_TO_BG_RATIO = 156 / 442
+MAX_LEN_FOR_HIGHSCORE_NAME = 20
 # endregion
 
 
@@ -183,7 +187,7 @@ class Menu:
     """Class for the menu in the game"""
 
     def __init__(self, main_surface: pygame.Surface, rect: pygame.Rect, bg_img: pygame.Surface = None, scaling_factor: float = None,
-                 lang: utils.Language = utils.Language.ENGLISH, button_texts: [str] = None, level_names: [str] = None, enable_controls_change: bool = True):
+                 lang: utils.Language = utils.Language.ENGLISH, button_texts: [str] = None, level_names: [str] = None, highscores: [[(str, int)]] = None, has_submenu_levels: bool = True, enable_controls_change: bool = True):
         """
         Initialize the menu.
 
@@ -235,27 +239,33 @@ class Menu:
         self.button_std_font = pygame.font.SysFont(self.button_font_name, self.font_size)
         self.button_texts_rend = [self.button_std_font.render(text, True, WHITE) for text in self.button_texts]
         #   2nd, define the sprites for the objects
-        self.on_click_functions = [self.click_on_play_button, self.click_on_profile_button, self.click_on_controls_button, self.click_on_options_button, self.click_on_exit_button]
+        self.on_click_functions = [self.click_on_play_button, self.click_on_highscore_button, self.click_on_controls_button, self.click_on_options_button, self.click_on_exit_button]
         self.buttons = [Clickable(self.button_imgs[WidgetState.NORMAL], rect, func) for rect, func in zip(self.button_rects, self.on_click_functions)]
         self.button_group = ClickableGroup(*self.buttons)
         self.clock = pygame.time.Clock()
-        # Submenus options, controls and levels
+        # Variables for submenu options
         self.music_volume = pygame.mixer_music.get_volume()
         self.sound_volume = 1.0
         self.cur_track_idx = 0
         self.cur_bg_idx = 0
         self.submenu_options = self.init_submenu_options()
+        # Variables for submenu controls
         self.controls_bg_img = pygame_menu.BaseImage(image_path=FILENAME_CONTROLS_BG, drawing_mode=pygame_menu.baseimage.IMAGE_MODE_FILL).resize(*(utils.mult_tuple_to_int(CONTROL_BG_IMG_SIZE, self.scaling_factor)))
         self.sel_player_id_in_submenu_controls = 0
         self.submenu_controls = self.init_submenu_controls(enable_controls_change)
-        # self.submenu_controls = self.init_submenu_options()
+        self.mini_menu_change_controls = self.init_mini_menu_change_controls()
+        # Variables for submenu levels
         self.level_prev_imgs = None
         self.submenu_levels = None
-        if level_names:
+        self.level_names = level_names
+        if has_submenu_levels:
             trg_w, trg_h = utils.mult_tuple_to_int(LEVEL_PREV_IMG_SIZE, self.scaling_factor)
             self.level_prev_imgs = [pygame_menu.BaseImage(image_path=FILENAME_LVL_PREV.format(i), drawing_mode=pygame_menu.baseimage.IMAGE_MODE_FILL).resize(trg_w, trg_h) for i in range(len(level_names))]
-            self.submenu_levels = self.init_submenu_level_selection(level_names)
-        self.mini_menu_change_controls = self.init_mini_menu_change_controls()
+            self.submenu_levels = self.init_submenu_level_selection()
+        # Variables for submenu highscore
+        self.highscores = highscores
+        self.cur_level_id_for_highscore = 0
+        self.submenu_highscore = self.init_submenu_highscore()
 
     def init_submenu_options(self) -> pygame_menu.Menu:
         """Initialize and return the submenu for the options."""
@@ -287,10 +297,10 @@ class Menu:
         """Init the submenu for the controls"""
         menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=self.button_std_font, widget_font_antialias=True, widget_font_color=WHITE)
         buttons_offset = self.buttons_surf.get_abs_offset()
-        submenu_controls = pygame_menu.Menu("Options", self.buttons_area_rect.w, self.buttons_area_rect.h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=menu_theme)
+        submenu_controls = pygame_menu.Menu("Controls", self.buttons_area_rect.w, self.buttons_area_rect.h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=menu_theme)
         sel_player = self.add_widget_from_mywidget(MySelector("", PLAYER_ITEMS, self.sel_player_id_in_submenu_controls, self.change_player_in_submenu_controls), submenu_controls)
         control_bg_img = submenu_controls.add.image(self.controls_bg_img, image_id=CONTROLS_BG_IMG_ID, padding=0)
-        control_labels = [submenu_controls.add.label(utils.get_descr_from_pygame_key(pygame_key), label_id=lbl_id, padding=0, font_name=FONT_SEGOE, font_size=int(CONTROLS_FONT_SIZE * self.scaling_factor), float=True)
+        control_labels = [submenu_controls.add.label(utils.get_descr_from_pygame_key(pygame_key), label_id=lbl_id, padding=0, font_name=FONT_COURIER_NEW, font_size=int(CONTROLS_FONT_SIZE * self.scaling_factor), float=True)
                           for pygame_key, lbl_id in zip(self.snake_controls[self.sel_player_id_in_submenu_controls], CONTROLS_LABEL_IDS)]
         change_button = self.add_widget_from_mywidget(MyButton("Change", self.change_controls), submenu_controls)
         self.set_std_params(sel_player, self.button_size, self.button_font_name, self.font_size, True)
@@ -317,9 +327,40 @@ class Menu:
             assert isinstance(sel_player, pygame_menu.widgets.Selector), f"Expected selector, got {type(sel_player)} instead."
             sel_player.update_items(PLAYER_ITEMS[:self.num_players])
             change_button.hide()
-        # main_frame.pack(submenu_controls.add.vertical_margin(top_margin))
-        submenu_controls.resize(main_frame.get_width(), main_frame.get_height())
+        submenu_controls.resize(*main_frame.get_size())
         return submenu_controls
+
+    def init_submenu_highscore(self) -> pygame_menu.Menu:
+        """Init the submenu for viewing the highscores"""
+        menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=self.button_std_font, widget_font_antialias=True, widget_font_color=WHITE)
+        buttons_offset = self.buttons_surf.get_abs_offset()
+        submenu_highscore = pygame_menu.Menu("Highscore", self.buttons_area_rect.w, self.buttons_area_rect.h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=menu_theme)
+        level_items = [(name, idx) for idx, name in enumerate(self.level_names)]
+        sel_level = self.add_widget_from_mywidget(MySelector("Level: ", level_items, 0, self.change_level_in_submenu_highscore), submenu_highscore)
+        self.set_std_params(sel_level, self.button_size, self.button_font_name, self.font_size, True)
+        # labels_highscore = [(self.set_std_params(submenu_highscore.add.label(name, label_id=name_lbl_id), self.button_size, FONT_SEGOE, self.font_size, False),
+        #                      self.set_std_params(submenu_highscore.add.label(score, label_id=score_lbl_id), self.button_size, FONT_SEGOE, self.font_size, False))
+        #                     for (name, score), (name_lbl_id, score_lbl_id) in zip(self.highscores[self.cur_level_id_for_highscore], HIGHSCORE_LBL_IDS)]
+        labels_highscore = [self.set_std_params(submenu_highscore.add.label("", label_id=lbl_id), self.button_size, FONT_COURIER_NEW, self.font_size, False) for lbl_id in HIGHSCORE_LBL_IDS]
+        free_space = int((submenu_highscore.get_height() - 5 * self.button_size[1]) / 4)
+        block_height = self.button_size[1] + free_space
+        top_margin = int(OPTIONS_TOP_MARGIN * self.scaling_factor)
+        main_frame = submenu_highscore.add.frame_v(self.buttons_area_rect.w, int(5 * block_height + 2 * top_margin), padding=0)
+        main_frame.pack(submenu_highscore.add.vertical_margin(top_margin))
+        main_frame.pack(sel_level, align=pygame_menu.locals.ALIGN_CENTER)
+        main_frame.pack(submenu_highscore.add.vertical_margin(block_height - sel_level.get_height()))
+        # hor_frame = self.submenu_highscore.add.frame_h(main_frame.get_width(), name_lbl.get_height(), padding=0)
+        # max_name_width = 0.8 * main_frame.get_width()
+        red_block_rate = 0.875
+        highscores = self.get_highscore_strings()
+        for lbl, text in zip(labels_highscore, highscores):
+            lbl.set_title(text)
+            self.set_wdg_background(lbl, self.button_size)
+            main_frame.pack(lbl, align=pygame_menu.locals.ALIGN_CENTER)
+            main_frame.pack(submenu_highscore.add.vertical_margin(red_block_rate * block_height - lbl.get_height()))
+        self.add_back_button(submenu_highscore, main_frame, int((1 - red_block_rate) * 3 * block_height))
+        submenu_highscore.resize(*main_frame.get_size())
+        return submenu_highscore
 
     # def init_submenu_controls(self) -> pygame_menu.Menu:
     #     """Initialize and return the submenu for the controls"""
@@ -363,7 +404,7 @@ class Menu:
     #     submenu_controls.resize(main_frame.get_width(), main_frame.get_height())
     #     return submenu_controls
 
-    def init_submenu_level_selection(self, level_names: [str]) -> pygame_menu.Menu:
+    def init_submenu_level_selection(self) -> pygame_menu.Menu:
         """Init the submenu for the level and player number selection screen"""
         menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=self.button_font_name, widget_font_antialias=True, widget_font_color=WHITE)
         buttons_offset = self.buttons_surf.get_abs_offset()
@@ -371,7 +412,7 @@ class Menu:
         submenu_levels = pygame_menu.Menu("Level Selection", menu_w, menu_h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=menu_theme)
         play_button = self.add_widget_from_mywidget(MyButton("Play", self.start_new_game), submenu_levels)
         sel_num_players = self.add_widget_from_mywidget(MySelector("Player Count: ", NUM_PLAYER_ITEMS, self.num_players - 1, self.change_num_players), submenu_levels)
-        level_items = [(name, idx) for idx, name in enumerate(level_names)]
+        level_items = [(name, idx) for idx, name in enumerate(self.level_names)]
         sel_level = self.add_widget_from_mywidget(MySelector("Level: ", level_items, self.level_idx, self.change_level), submenu_levels)
         level_img = submenu_levels.add.image(self.level_prev_imgs[self.level_idx], image_id=LEVEL_PREV_IMG_ID, padding=0)
         free_space = (submenu_levels.get_height() - 4 * self.button_size[1] - level_img.get_height()) / 4
@@ -416,13 +457,13 @@ class Menu:
         wdg = wdg.add_self_to_kwargs()
         return wdg
 
-    def add_back_button(self, menu: pygame_menu.Menu, frame: pygame_menu.widgets.Frame = None, margin: int = 0) -> pygame_menu.widgets.Button:
+    def add_back_button(self, menu: pygame_menu.Menu, frame: pygame_menu.widgets.Frame = None, margin: float = 0) -> pygame_menu.widgets.Button:
         """Add a back button to the given menu in the given frame"""
         button = self.set_std_params(self.add_widget_from_mywidget(MyButton("Back", self.click_on_back_button), menu), self.button_size)
         assert isinstance(button, pygame_menu.widgets.Button)
         if frame:
             if margin > 0:
-                frame.pack(menu.add.vertical_margin(margin))
+                frame.pack(menu.add.vertical_margin(int(margin)))
             frame.pack(button, align=pygame_menu.locals.ALIGN_CENTER)
         return button
 
@@ -445,12 +486,12 @@ class Menu:
             wdg_set_background(wdg, COLOR_WIDGETS[WidgetState.NORMAL], size)
         return wdg
 
-    def set_help_frame_around_wdg(self, menu: pygame_menu.Menu, wdg: pygame_menu.widgets.Widget, size: (int, int)) -> pygame_menu.widgets.Frame:
-        """Set a frame containing just the single widget and add it to the menu"""
-        help_frame = menu.add.frame_v(size[0], size[1], padding=0)
-        help_frame.pack(wdg, align=pygame_menu.locals.ALIGN_CENTER)
-        help_frame.set_border(1, WHITE)
-        return help_frame
+    # def set_help_frame_around_wdg(self, menu: pygame_menu.Menu, wdg: pygame_menu.widgets.Widget, size: (int, int)) -> pygame_menu.widgets.Frame:
+    #     """Set a frame containing just the single widget and add it to the menu"""
+    #     help_frame = menu.add.frame_v(size[0], size[1], padding=0)
+    #     help_frame.pack(wdg, align=pygame_menu.locals.ALIGN_CENTER)
+    #     help_frame.set_border(1, WHITE)
+    #     return help_frame
 
     def adjust_font_size_to_fit_trg_wdg_size(self, wdg: pygame_menu.widgets.Widget, trg_size: (int, int)) -> pygame_menu.widgets.Widget:
         """Adjust the font size of the given widget until it fits into the given target size"""
@@ -469,9 +510,9 @@ class Menu:
         mini_menu = pygame_menu.Menu("Change Controls", 500, 500, position=(500, 500, False), enabled=False, theme=menu_theme)
         text_label = mini_menu.add.label("", label_id="TextLabel", align=pygame_menu.locals.ALIGN_CENTER)
         msg_label = mini_menu.add.label("Key not supported. Try again.", label_id="MsgLabel", align=pygame_menu.locals.ALIGN_CENTER)
-        self.set_std_params(text_label, self.button_size, FONT_SEGOE, int(CONTROLS_FONT_SIZE * self.scaling_factor), False)
+        self.set_std_params(text_label, self.button_size, FONT_COURIER_NEW, int(CONTROLS_FONT_SIZE * self.scaling_factor), False)
         vert_marg = mini_menu.add.vertical_margin(15 * self.scaling_factor)
-        self.set_std_params(msg_label, self.button_size, FONT_SEGOE, int(0.75 * self.font_size), False)
+        self.set_std_params(msg_label, self.button_size, FONT_COURIER_NEW, int(0.75 * self.font_size), False)
         main_frame = mini_menu.add.frame_v(mini_menu.get_rect().w, text_label.get_height() + msg_label.get_height() + vert_marg.get_height(), padding=0)
         main_frame.pack(text_label, align=pygame_menu.locals.ALIGN_CENTER)
         main_frame.pack(vert_marg)
@@ -508,14 +549,18 @@ class Menu:
     def handle_events(self) -> bool:
         """Handle the events in the start menu. Returns True if the user starts a new game or False if they want to exit"""
         button_pushed = False
+        submenus = [self.submenu_options, self.submenu_controls, self.submenu_highscore] + [self.submenu_levels] if self.submenu_levels else []
         while not self.start_game and not self.exit:
             events = pygame.event.get()
-            if self.submenu_options.is_enabled():
-                self.submenu_options.update(events)
-            elif self.submenu_controls.is_enabled():
-                self.submenu_controls.update(events)
-            elif self.submenu_levels and self.submenu_levels.is_enabled():
-                self.submenu_levels.update(events)
+            active_submenu = [menu for menu in submenus if menu.is_enabled()]
+            if active_submenu:
+                active_submenu[0].update(events)
+            # if self.submenu_options.is_enabled():
+            #     self.submenu_options.update(events)
+            # elif self.submenu_controls.is_enabled():
+            #     self.submenu_controls.update(events)
+            # elif self.submenu_levels and self.submenu_levels.is_enabled():
+            #     self.submenu_levels.update(events)
             else:
                 for event in events:
                     if event.type == pygame.MOUSEMOTION and not button_pushed:
@@ -540,16 +585,14 @@ class Menu:
         """Change keys for controlling a snake"""
         self.submenu_controls.disable()
         self.mini_menu_change_controls.enable()
-        # self.mini_menu_change_controls.set_title(f"Player {self.sel_player_id_in_submenu_controls + 1}")
         directions = ["Up", "Left", "Down", "Right"]
-        keys = []
         text_label = self.mini_menu_change_controls.get_widget("TextLabel")
         msg_label = self.mini_menu_change_controls.get_widget("MsgLabel")
+        keys = []
         for direction in directions:
             text_label.set_title(f"Player {self.sel_player_id_in_submenu_controls + 1}: Press key for <{direction}>")
-            self.set_std_params(text_label, self.button_size, FONT_SEGOE, self.font_size, False)
+            self.set_std_params(text_label, self.button_size, FONT_COURIER_NEW, self.font_size, False)
             if direction == "Up":
-                # self.mini_menu_change_controls.resize(*utils.mult_tuple_to_int(text_label.get_size(), 1.2))
                 if (cur_center := self.mini_menu_change_controls.get_rect().center) != (trg_center := self.main_surface.get_rect().center):
                     self.mini_menu_change_controls.translate(*utils.subtract_tuples_int(trg_center, cur_center))
             self.update_display()
@@ -585,6 +628,14 @@ class Menu:
                     add_translate = utils.subtract_tuples_int(trg_center, cur_center)
                     lbl.translate(*utils.add_two_tuples(cur_translate, add_translate))
 
+    def update_submenu_highscore(self) -> None:
+        """Update the highscores in the resp. submenu when the level to be displayed got changed"""
+        if hasattr(self, "submenu_highscore"):
+            for lbl_id, score in zip(HIGHSCORE_LBL_IDS, self.get_highscore_strings()):
+                cur_label = self.submenu_highscore.get_widget(lbl_id)
+                assert isinstance(cur_label, pygame_menu.widgets.Label), f"Expected Label, got {type(cur_label)} instead."
+                cur_label.set_title(score)
+                self.set_wdg_background(cur_label, self.button_size)
 
     def change_music_volume(self, new_volume: float, **kwargs) -> None:
         """Change the music volume. The input param new_volume must be between 0.0 and 1.0."""
@@ -609,8 +660,8 @@ class Menu:
         else:
             self.start_new_game()
 
-    def click_on_profile_button(self) -> None:
-        pass
+    def click_on_highscore_button(self) -> None:
+        self.submenu_highscore.enable()
 
     def click_on_controls_button(self) -> None:
         self.submenu_controls.enable()
@@ -624,7 +675,7 @@ class Menu:
         self.exit = True
 
     def click_on_back_button(self, *args, **kwargs) -> None:
-        for submenu in [self.submenu_options, self.submenu_controls]:
+        for submenu in [self.submenu_options, self.submenu_controls, self.submenu_highscore]:
             submenu.disable()
         if self.submenu_levels:
             self.submenu_levels.disable()
@@ -670,6 +721,14 @@ class Menu:
         self.sel_player_id_in_submenu_controls = sel_value
         self.update_submenu_controls()
 
+    def change_level_in_submenu_highscore(self, sel_item_and_index, sel_value, **kwargs) -> None:
+        """Change the level in the highscore submenu. Callback function for the resp. selector widget"""
+        self.cur_level_id_for_highscore = sel_value
+        if "widget" in kwargs and isinstance(wdg := kwargs["widget"], pygame_menu.widgets.Widget):
+            self.adjust_font_size_to_fit_trg_wdg_size(wdg, self.button_size)
+            self.set_wdg_background(wdg, self.button_size)
+        self.update_submenu_highscore()
+
     def set_sound_volume(self, volume: float):
         """Set the given volume as the default value for the sound volume widget"""
         if 0 <= volume <= 1:
@@ -680,6 +739,11 @@ class Menu:
         """Update the snake controls in the menu"""
         self.snake_controls = controls
         self.update_submenu_controls()
+
+    def get_highscore_strings(self) -> [str]:
+        """Return the strings for the highscores of the currently displayed level"""
+        scores = self.highscores[self.cur_level_id_for_highscore]
+        return [f"{idx + 1}. {name:{MAX_LEN_FOR_HIGHSCORE_NAME}} {score.rjust(5)}" for idx, (name, score) in enumerate(scores)] + [""] * max(0, (3 - len(scores)))
 
     def get_infos(self) -> (int, int, float, [[int, int, int, int]]):
         """
@@ -693,24 +757,41 @@ class Menu:
 
     def update_display(self) -> None:
         """Display the current state on the screen"""
-        if self.bg_img:
-            self.main_surface.blit(self.bg_img, (0, 0))
-        else:
-            self.main_surface.fill(BG_COLOR)
-        if self.submenu_options.is_enabled():
-            self.submenu_options.draw(self.main_surface)
-        elif self.submenu_controls.is_enabled():
-            self.submenu_controls.draw(self.main_surface)
-        elif self.mini_menu_change_controls.is_enabled():
-            self.submenu_controls.enable()
-            self.submenu_controls.draw(self.main_surface)
-            self.submenu_controls.disable()
-            self.mini_menu_change_controls.draw(self.main_surface)
-        elif self.submenu_levels and self.submenu_levels.is_enabled():
-            self.submenu_levels.draw(self.main_surface)
+        # if self.bg_img:
+        #     self.main_surface.blit(self.bg_img, (0, 0))
+        # else:
+        #     self.main_surface.fill(BG_COLOR)
+        self.main_surface.blit(self.bg_img, (0, 0)) if self.bg_img else self.main_surface.fill(BG_COLOR)
+        submenus = [self.submenu_options, self.submenu_controls, self.mini_menu_change_controls, self.submenu_highscore] + [self.submenu_levels] if self.submenu_levels else []
+        active_submenu = [menu for menu in submenus if menu.is_enabled()]
+        if active_submenu:
+            active_submenu[0].draw(self.main_surface)
+            if active_submenu is self.mini_menu_change_controls:
+                self.submenu_controls.enable()
+                self.submenu_controls.draw(self.main_surface)
+                self.submenu_controls.disable()
         else:
             self.button_group.draw(self.buttons_surf)
             for rect, text in zip(self.button_rects, self.button_texts_rend):
                 self.buttons_surf.blit(text, text.get_rect(center=rect.center))
+
+        # if self.submenu_options.is_enabled():
+        #     self.submenu_options.draw(self.main_surface)
+        # elif self.submenu_controls.is_enabled():
+        #     self.submenu_controls.draw(self.main_surface)
+        # elif self.mini_menu_change_controls.is_enabled():
+        #     self.submenu_controls.enable()
+        #     self.submenu_controls.draw(self.main_surface)
+        #     self.submenu_controls.disable()
+        #     self.mini_menu_change_controls.draw(self.main_surface)
+        # elif self.submenu_highscore.is_enabled():
+        #     self.submenu_highscore.draw(self.main_surface)
+        # elif self.submenu_levels and self.submenu_levels.is_enabled():
+        #     self.submenu_levels.draw(self.main_surface)
+        # else:
+        #     self.button_group.draw(self.buttons_surf)
+        #     for rect, text in zip(self.button_rects, self.button_texts_rend):
+        #         self.buttons_surf.blit(text, text.get_rect(center=rect.center))
+
         self.main_surface.blit(self.menu_frame_img, self.menu_rect)
         pygame.display.update()
