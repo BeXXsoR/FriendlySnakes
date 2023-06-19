@@ -40,7 +40,6 @@ PIQUANCY_GROWING_DURATION = 3
 SPIT_FIRE_DURATION = 2
 SPIT_FIRE_RANGE = 2
 GROWING_SIZES = {utils.Objects.APPLE: 1, utils.Objects.MELON: 3}
-# SPEEDING_FACTORS = {utils.Objects.COFFEE: 1.5, utils.Objects.TEA: 2 / 3}
 SPEEDING_SUMMANDS = {utils.Objects.COFFEE: 3, utils.Objects.TEA: -3}
 REOCC_DUR = 250
 REOCC_PER_SEC = int(1000 / REOCC_DUR)
@@ -62,6 +61,9 @@ FILENAME_PIQU_RISING = "../res/piquancy_rising.gif"
 FILENAME_SPEEDO = "../res/speedo.png"
 FILENAMES_BG = {utils.Backgrounds.DESERT: "../res/bg_desert.png"}
 FILENAMES_MUSIC_TRACKS = ["../res/title_theme.ogg"]
+# --- Fonts ---
+FONT_COURIER_NEW = "Courier New"
+FONT_SNAKE_CHAN = "../res/SnakeChan-MMoJ.ttf"
 # --- Display parameters ---
 SNAKE_NAME_FONT_SIZE = 40
 SNAKE_INFO_FONT_SIZE = 40
@@ -74,8 +76,6 @@ TEXTS_BUTTON_PAUSE_MENU = {utils.Language.GERMAN: ["Fortsetzen", "Highscore", "S
 						   utils.Language.ENGLISH: ["Resume", "Highscore", "Controls", "Options", "Back to main menu"]}
 TEXTS_BUTTON_GAME_OVER_MENU = {utils.Language.GERMAN: ["Erneut spielen", "Highscore", "Steuerung", "Optionen", "Zurück zum Hauptmenü"],
 						   utils.Language.ENGLISH: ["Play again", "Highscore", "Controls", "Options", "Back to main menu"]}
-# FONT_SEGOE = "segoeuisymbol"
-FONT_COURIER_NEW = "Courier New"
 # benchmark screen: 2560x1440
 BENCHMARK_WIDTH = 2560
 BENCHMARK_HEIGHT = 1440
