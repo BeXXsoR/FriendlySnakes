@@ -48,7 +48,7 @@ class Communicator:
         self.lang = utils.Language.ENGLISH
         self.level_idx = 0
         self.levels = []
-        self.read_level_infos()
+        self.levels_as_json = self.read_level_infos()
         self.highscores = [level.highscore for level in self.levels]
         self.level = self.levels[self.level_idx]
         utils.play_music_track(FILENAMES_MUSIC_TRACKS[0], 0.1)
@@ -118,11 +118,12 @@ class Communicator:
             for menu in [self.start_menu, self.pause_menu, self.game_over_menu]:
                 menu.set_sound_volume(new_sound_volume)
             self.sound_volume = new_sound_volume
-        if new_controls:
+        if new_controls != self.snake_controls:
             for menu in [self.start_menu, self.pause_menu, self.game_over_menu]:
                 menu.set_controls(new_controls)
             orientations = [ORIENT_UP, ORIENT_LEFT, ORIENT_DOWN, ORIENT_RIGHT]
             self.snake_controls = [{key: ori for key, ori in zip(controls, orientations)} for controls in new_controls]
+            self.snake_controls_all = []
             for controls in self.snake_controls:
                 self.snake_controls_all.extend(controls.keys())
 
@@ -133,12 +134,13 @@ class Communicator:
         self.main_surface.blit(msg_rendered, msg_rendered.get_rect(center=(self.main_surface.get_rect().centerx, 0.95 * self.main_surface.get_height())))
         pygame.display.update()
 
-    def read_level_infos(self) -> None:
+    def read_level_infos(self) -> {}:
         """Reads the level infos from the json file"""
         with (open(FILENAME_LEVEL_INFO)) as file_level_info:
             level_infos = json.load(file_level_info)
         for level_info in level_infos:
             self.levels.append(Level(level_info))
+        return level_infos
 
     def init_start_menu(self):
         # Wait for user pressing key
@@ -165,6 +167,8 @@ class Communicator:
             self.start_game()
             self.start_menu.reset()
             cnt += 1
+        # User ended game - save highscores to json file
+        self.save_highscores_to_file()
 
     def start_game(self):
         """Start or resume the game"""
@@ -193,6 +197,20 @@ class Communicator:
         """Handle the game over situation"""
         self.game_over_menu.reset()
         self.game_over_menu.bg_img = self.main_surface.copy()
+        score = sum([snake.score for snake in self.game.snakes]) if self.level.goal == utils.Goals.HIGHSCORE else int((pygame.time.get_ticks() - self.paused_time) / 1000)
+        cur_high = self.highscores[self.level_idx]
+        if len(cur_high) < 3 or score > cur_high[2][1]:
+            # New highscore
+            self.game_over_menu.mini_menu_new_highscore.enable()
+            self.game_over_menu.handle_events()
+            team_name = self.game_over_menu.team_name
+            place = 0
+            while len(cur_high) > place and score <= cur_high[place][1]:
+                place += 1
+            self.highscores[self.level_idx] = cur_high[:place] + [(team_name, score)] + cur_high[place:2]
+            for menu in [self.start_menu, self.pause_menu, self.game_over_menu]:
+                menu.set_highscore(self.level_idx, self.get_highscore_for_display_for_single_level(self.level_idx))
+            self.game_over_menu.mini_menu_new_highscore.disable()
         if play_again := self.game_over_menu.handle_events():
             self.reset()
         else:
@@ -276,9 +294,21 @@ class Communicator:
         for sound in self.item_sounds.values():
             sound.stop()
 
-    def get_highscores_for_display(self) -> [(str, str)]:
-        """Return the highscores in a displayable format, i.e. for time-levels, change the score to a time format"""
-        return [[(name, str(score) if level.goal == utils.Goals.HIGHSCORE else utils.get_time_string_for_ms(score * 1000)) for (name, score) in highscore] for highscore, level in zip(self.highscores, self.levels)]
+    def get_highscores_for_display(self) -> [[(str, str)]]:
+        """Return the highscores for all levels in a displayable format"""
+        return [self.get_highscore_for_display_for_single_level(level_idx) for level_idx in range(len(self.levels))]
+
+    def get_highscore_for_display_for_single_level(self, level_idx) -> [(str, str)]:
+        """Return the highscore for a single level in displayable format, i.e. for time-levels, change the score to a time format"""
+        return [(name, str(score) if self.levels[level_idx].goal == utils.Goals.HIGHSCORE else utils.get_time_string_for_ms(score * 1000)) for (name, score) in self.highscores[level_idx]]
+
+    def save_highscores_to_file(self) -> None:
+        """Save the current highscores to the levels.json file"""
+        for level_json, highscore in zip(self.levels_as_json, self.highscores):
+            assert "highscore" in level_json, "Missing 'highscore' tag in level json dict."
+            level_json["highscore"] = highscore
+        with (open(FILENAME_LEVEL_INFO, "w")) as file_level_info:
+            json.dump(self.levels_as_json, file_level_info)
 
     def show_map(self):
         is_running = True
