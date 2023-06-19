@@ -255,8 +255,8 @@ class Menu:
 		self.button_base_imgs = {state: pygame_menu.BaseImage(image_path=FILENAMES_BUTTON[state], drawing_mode=pygame_menu.baseimage.IMAGE_MODE_FILL) for state in WidgetState}
 		#   Texts for the buttons
 		self.font_size = int(BUTTON_FONT_SIZE * self.scaling_factor)
-		self.button_font_name = "Snake Chan"
-		self.button_std_font = pygame.font.SysFont(self.button_font_name, self.font_size)
+		self.button_font_name = FONT_SNAKE_CHAN
+		self.button_std_font = pygame.font.Font(self.button_font_name, self.font_size)
 		self.button_texts_rend = [self.button_std_font.render(text, True, WHITE) for text in self.button_texts]
 		#   2nd, define the sprites for the objects
 		self.on_click_functions = [self.click_on_play_button, self.click_on_highscore_button, self.click_on_controls_button, self.click_on_options_button, self.click_on_exit_button]

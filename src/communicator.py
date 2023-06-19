@@ -135,7 +135,7 @@ class Communicator:
 
     def set_start_screen(self):
         self.main_surface.blit(self.start_bg_img, (0, 0))
-        msg_font = pygame.font.SysFont("Snake Chan", 40)
+        msg_font = pygame.font.Font(FONT_SNAKE_CHAN, 40)
         msg_rendered = msg_font.render("Press any key", True, WHITE)
         self.main_surface.blit(msg_rendered, msg_rendered.get_rect(center=(self.main_surface.get_rect().centerx, 0.95 * self.main_surface.get_height())))
         pygame.display.update()
@@ -251,7 +251,7 @@ class Communicator:
         self.graphics.update_display(*self.game.get_infos_for_updating_display(), paused_time=self.paused_time)
         # let user press key to decide when to start
         cur_time = pygame.time.get_ticks()
-        msg_font = pygame.font.SysFont("Snake Chan", 40)
+        msg_font = pygame.font.Font(FONT_SNAKE_CHAN, 40)
         msg_rendered = msg_font.render("Press key to start", True, WHITE)
         self.main_surface.blit(msg_rendered, msg_rendered.get_rect(center=self.main_surface.get_rect().center))
         pygame.display.update()
