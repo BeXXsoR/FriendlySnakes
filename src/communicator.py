@@ -163,7 +163,6 @@ class Communicator:
             self.game = Game(self.snake_names[:self.num_players], self.snake_colors[:self.num_players], self.snake_controls[:self.num_players], self.level)
             if cnt > 0:
                 self.reset()
-                # self.game = Game(self.snake_names[:self.num_players], self.snake_colors[:self.num_players], self.snake_controls[:self.num_players], self.level)
             self.start_game()
             self.start_menu.reset()
             cnt += 1
@@ -244,6 +243,18 @@ class Communicator:
         """Main game loop"""
         self.reset_timer()
         self.graphics.update_display(*self.game.get_infos_for_updating_display(), paused_time=self.paused_time)
+        # let user press key to decide when to start
+        cur_time = pygame.time.get_ticks()
+        msg_font = pygame.font.SysFont("Snake Chan", 40)
+        msg_rendered = msg_font.render("Press key to start", True, WHITE)
+        self.main_surface.blit(msg_rendered, msg_rendered.get_rect(center=self.main_surface.get_rect().center))
+        pygame.display.update()
+        key_pressed = False
+        while not key_pressed:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYUP:
+                    key_pressed = True
+        self.paused_time += (pygame.time.get_ticks() - cur_time)
         # start game loop
         crashed = False
         while not self.paused and not self.back_to_main_menu and not crashed:
