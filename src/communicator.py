@@ -105,11 +105,13 @@ class Communicator:
 
     def update_param_from_menu(self, menu: Menu) -> None:
         """Get the relevant infos from the given menu and update the internal parameters"""
-        level_idx, num_players, new_sound_volume, new_controls = menu.get_infos()
-        if level_idx:
+        level_idx, num_players, new_sound_volume, new_controls, new_colors = menu.get_infos()
+        if level_idx is not None:
             self.level_idx = level_idx
             self.level = self.levels[self.level_idx]
         if num_players:
+            for menu in [self.start_menu, self.pause_menu, self.game_over_menu]:
+                menu.change_num_players(None, num_players)
             self.num_players = num_players
             self.upd_snake_events = [pygame.event.Event(event_id, {"snake_idx": idx}) for idx, event_id in enumerate(UPDATE_SNAKES[:self.num_players])]
         if new_sound_volume != self.sound_volume:
@@ -126,6 +128,10 @@ class Communicator:
             self.snake_controls_all = []
             for controls in self.snake_controls:
                 self.snake_controls_all.extend(controls.keys())
+        if new_colors != self.snake_colors:
+            for menu in [self.start_menu, self.pause_menu, self.game_over_menu]:
+                menu.set_colors(new_colors)
+            self.snake_colors = new_colors
 
     def set_start_screen(self):
         self.main_surface.blit(self.start_bg_img, (0, 0))

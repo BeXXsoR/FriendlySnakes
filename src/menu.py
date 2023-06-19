@@ -31,8 +31,7 @@ ORANGE = (255, 128, 0)
 GREY = (192, 192, 192)
 BLACK = (0, 0, 0)
 BLACK_TP = (0, 0, 0, 0)
-# FILENAMES_SNAKE = {GREEN: "../res/menu_snake_green.png", BLUE: "../res/menu_snake_blue.png",
-#                    CYAN: "../res/menu_snake_cyan.png", PINK: "../res/menu_snake_pink.png"}
+FILENAMES_SNAKE_COLORS = {GREEN: "../res/menu_snake_green.png", BLUE: "../res/menu_snake_blue.png", CYAN: "../res/menu_snake_cyan.png", PINK: "../res/menu_snake_pink.png"}
 FILENAME_LVL_PREV = "../res/level_prev_{}.png"
 FILENAME_CONTROLS_BG = "../res/menu_controls_bg.png"
 FILENAME_MENU_FRAME = "../res/menu_frame.png"
@@ -42,11 +41,14 @@ BG_ITEMS = [("Desert", 0)]
 MUSIC_TRACK_ITEMS = [("Bells Song", 0)]
 NUM_PLAYER_ITEMS = [("1", 1), ("2", 2), ("3", 3), ("4", 4)]
 PLAYER_ITEMS = [("Player 1", 0), ("Player 2", 1), ("Player 3", 2), ("Player 4", 3)]
+COLOR_ITEMS = [("Green", GREEN), ("Blue", BLUE), ("Cyan", CYAN), ("Pink", PINK)]
 LEVEL_PREV_IMG_ID = "Level_Prev_Img"
 CONTROLS_LABEL_IDS = ("Control_Up", "Control_Left", "Control_Down", "Control_Right")
 CONTROLS_BG_IMG_ID = "Controls_Background"
-# HIGHSCORE_LBL_IDS = (("Name1", "Score1"), ("Name2", "Score2"), ("Name3", "Score3"))
 HIGHSCORE_LBL_IDS = ("Highscore1", "Highscore2", "Highscore3")
+PLAYER_SEL_ID = "Sel_Player"
+SNAKE_COLOR_IMG_ID = "Snake_Color"
+SNAKE_COLOR_SEL_ID = "Sel_Color"
 FPS = 60
 # benchmark screen: 2560x1440
 BUTTON_AREA_START = (36, 267)
@@ -58,10 +60,12 @@ BUTTON_FONT_SIZE = 25
 CONTROLS_FONT_SIZE = 35
 LEVEL_MENU_SIZE_FACTOR = 1
 LEVEL_PREV_IMG_SIZE = (115, 115)
+SNAKE_COLOR_IMG_SIZE = (120, 120)
 CONTROL_BG_IMG_SIZE = (200, 200)
 CONTROL_LBL_TO_BG_RATIO = 156 / 442
 MAX_LEN_FOR_TEAM_NAME = 20
 MAX_WIDTH_FOR_TEXT_INPUT = 20
+
 
 # endregion
 
@@ -155,6 +159,7 @@ class MyRangeSlider:
 	title: str
 	default: float
 	onchange: Callable
+	id: str = None
 
 
 @dataclass
@@ -163,6 +168,9 @@ class MyDropSelect:
 	title: str
 	items: [(str, int)]
 	onchange: Callable
+	default: int = 0
+	id: str = None
+	option_font: str = None
 
 
 @dataclass
@@ -179,6 +187,7 @@ class MySelector:
 	items: [(str, int)]
 	default: int
 	onchange: Callable
+	id: str = None
 
 
 @dataclass
@@ -188,6 +197,7 @@ class MyTextInput:
 	default: str
 	maxchar: int
 	onreturn: Callable
+	id: str = None
 
 
 MyWidget = Union[MyRangeSlider, MyDropSelect, MyButton, MySelector, MyTextInput]
@@ -216,10 +226,7 @@ class Menu:
 		self.num_players = 2
 		self.level_idx = 0
 		self.button_texts = button_texts if button_texts else TEXTS_BUTTON_START_MENU[self.lang]
-		# self.snake_names = ["Kokosnuss", "Tiger", "Muh", "Mausi"]
-		self.snake_names = ["Ko", "Ti", "Mu", "Ma"]
 		self.snake_colors = [GREEN, BLUE, CYAN, PINK]
-		# self.snake_controls = [["↑", "←", "↓", "→"], ["W", "A", "S", "D"], ["8", "4", "5", "6"], ["I", "J", "K", "L"]]
 		self.snake_controls = [
 			[pygame.K_UP, pygame.K_LEFT, pygame.K_DOWN, pygame.K_RIGHT],
 			[pygame.K_w, pygame.K_a, pygame.K_s, pygame.K_d],
@@ -265,6 +272,8 @@ class Menu:
 		# Variables for submenu controls
 		self.controls_bg_img = pygame_menu.BaseImage(image_path=FILENAME_CONTROLS_BG, drawing_mode=pygame_menu.baseimage.IMAGE_MODE_FILL).resize(*(utils.mult_tuple_to_int(CONTROL_BG_IMG_SIZE, self.scaling_factor)))
 		self.sel_player_id_in_submenu_controls = 0
+		trg_w, trg_h = utils.mult_tuple_to_int(SNAKE_COLOR_IMG_SIZE, self.scaling_factor)
+		self.snake_color_imgs = {color: pygame_menu.BaseImage(image_path=FILENAMES_SNAKE_COLORS[color], drawing_mode=pygame_menu.baseimage.IMAGE_MODE_FILL).resize(trg_w, trg_h) for color in self.snake_colors}
 		self.submenu_controls = self.init_submenu_controls(enable_controls_change)
 		self.mini_menu_change_controls = self.init_mini_menu_change_controls()
 		# Variables for submenu levels
@@ -283,7 +292,6 @@ class Menu:
 		self.team_name = ""
 		self.has_entered_team_name = False
 		self.mini_menu_new_highscore = self.init_mini_menu_new_highscore()
-
 
 	def init_submenu_options(self) -> pygame_menu.Menu:
 		"""Initialize and return the submenu for the options."""
@@ -316,35 +324,62 @@ class Menu:
 		menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=self.button_std_font, widget_font_antialias=True, widget_font_color=WHITE)
 		buttons_offset = self.buttons_surf.get_abs_offset()
 		submenu_controls = pygame_menu.Menu("Controls", self.buttons_area_rect.w, self.buttons_area_rect.h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=menu_theme)
-		sel_player = self.add_widget_from_mywidget(MySelector("", PLAYER_ITEMS, self.sel_player_id_in_submenu_controls, self.change_player_in_submenu_controls), submenu_controls)
+		sel_player = self.add_widget_from_mywidget(MySelector("", PLAYER_ITEMS, self.sel_player_id_in_submenu_controls, self.change_player_in_submenu_controls, id=PLAYER_SEL_ID), submenu_controls)
 		control_bg_img = submenu_controls.add.image(self.controls_bg_img, image_id=CONTROLS_BG_IMG_ID, padding=0)
 		control_labels = [submenu_controls.add.label(utils.get_descr_from_pygame_key(pygame_key), label_id=lbl_id, padding=0, font_name=FONT_COURIER_NEW, font_size=int(CONTROLS_FONT_SIZE * self.scaling_factor), float=True)
 						  for pygame_key, lbl_id in zip(self.snake_controls[self.sel_player_id_in_submenu_controls], CONTROLS_LABEL_IDS)]
 		change_button = self.add_widget_from_mywidget(MyButton("Change", self.change_controls), submenu_controls)
+
+		sel_color = self.add_widget_from_mywidget(MyDropSelect("", COLOR_ITEMS, self.change_color, default=self.sel_player_id_in_submenu_controls, id=SNAKE_COLOR_SEL_ID, option_font=FONT_COURIER_NEW), submenu_controls)
+		snake_img = submenu_controls.add.image(self.snake_color_imgs[self.snake_colors[self.sel_player_id_in_submenu_controls]], image_id=SNAKE_COLOR_IMG_ID, padding=0)
+		self.set_std_params(sel_color, sel_color.get_size(), FONT_COURIER_NEW, self.font_size, True)
+
 		self.set_std_params(sel_player, self.button_size, self.button_font_name, self.font_size, True)
-		self.set_std_params(change_button, utils.mult_tuple_to_int(change_button.get_size(), 1.1), self.button_font_name, self.font_size, True)
+		self.set_std_params(change_button, utils.mult_tuple_to_int(change_button.get_size(), 1.1), FONT_COURIER_NEW, self.font_size, True)
 		free_space = int((submenu_controls.get_height() - 3 * self.button_size[1] - control_bg_img.get_height()) / 3)
 		block_height = self.button_size[1] + free_space
 		top_margin = int(OPTIONS_TOP_MARGIN * self.scaling_factor)
 		main_frame = submenu_controls.add.frame_v(self.buttons_area_rect.w, self.buttons_area_rect.h + 2 * top_margin, padding=0)
+
+		vert_margin_right = int(0.5 * (block_height - change_button.get_height()))
+		hor_frame_height = max(sel_color.get_height() + snake_img.get_height(), control_bg_img.get_height() + change_button.get_height()) + 2 * vert_margin_right
+		hor_frame = submenu_controls.add.frame_h(main_frame.get_width(), hor_frame_height, padding=0)
+		vert_frames = [submenu_controls.add.frame_v(0.5 * hor_frame.get_width(), hor_frame.get_height(), padding=0) for _ in range(2)]
+
 		main_frame.pack(submenu_controls.add.vertical_margin(top_margin))
 		main_frame.pack(sel_player, align=pygame_menu.locals.ALIGN_CENTER)
 		main_frame.pack(submenu_controls.add.vertical_margin(max(1, block_height - sel_player.get_height())))
-		main_frame.pack(control_bg_img, align=pygame_menu.locals.ALIGN_CENTER)
+
+		vert_frames[1].pack(control_bg_img, align=pygame_menu.locals.ALIGN_CENTER)
+		vert_frames[1].pack(submenu_controls.add.vertical_margin(max(1, vert_margin_right)))
+		vert_frames[1].pack(change_button, align=pygame_menu.locals.ALIGN_CENTER)
+		vert_margin_left = int((control_bg_img.get_height() - snake_img.get_height()) / 2)
+		vert_frames[0].pack(submenu_controls.add.vertical_margin(vert_margin_left))
+		vert_frames[0].pack(snake_img, align=pygame_menu.locals.ALIGN_CENTER)
+		vert_frames[0].pack(submenu_controls.add.vertical_margin(max(1, vert_margin_left + vert_margin_right)))
+		vert_frames[0].pack(sel_color, align=pygame_menu.locals.ALIGN_CENTER)
+
+		# main_frame.pack(control_bg_img, align=pygame_menu.locals.ALIGN_CENTER)
 		# The center of a label part is [156/442 * image_width] away from the center of the image
 		img_centerx, img_centery = control_bg_img.get_rect().center
 		diff = int(CONTROL_LBL_TO_BG_RATIO * control_bg_img.get_width())
 		trg_centers = [(img_centerx, img_centery - diff), (img_centerx - diff, img_centery), (img_centerx, img_centery + diff), (img_centerx + diff, img_centery)]
 		for lbl, trg_center in zip(control_labels, trg_centers):
-			main_frame.pack(lbl, align=pygame_menu.locals.ALIGN_CENTER)
+			# main_frame.pack(lbl, align=pygame_menu.locals.ALIGN_CENTER)
+			vert_frames[1].pack(lbl, align=pygame_menu.locals.ALIGN_CENTER)
 			lbl.translate(*utils.subtract_tuples_int(trg_center, lbl.get_rect().center))
-		main_frame.pack(submenu_controls.add.vertical_margin(max(1, int(0.5 * (block_height - change_button.get_height())))))
-		main_frame.pack(change_button, align=pygame_menu.locals.ALIGN_CENTER)
-		self.add_back_button(submenu_controls, main_frame, max(1, int(1.0 * (block_height - change_button.get_height()))))
+
+		hor_frame.pack(vert_frames)
+		main_frame.pack(hor_frame)
+
+		# main_frame.pack(submenu_controls.add.vertical_margin(max(1, int(0.5 * (block_height - change_button.get_height())))))
+		# main_frame.pack(change_button, align=pygame_menu.locals.ALIGN_CENTER)
+		self.add_back_button(submenu_controls, main_frame, max(1, int(0.9 * (block_height - change_button.get_height()))))
 		if not enable_controls_change:
 			assert isinstance(sel_player, pygame_menu.widgets.Selector), f"Expected selector, got {type(sel_player)} instead."
 			sel_player.update_items(PLAYER_ITEMS[:self.num_players])
 			change_button.hide()
+			sel_color.hide()
 		submenu_controls.resize(*main_frame.get_size())
 		return submenu_controls
 
@@ -498,16 +533,19 @@ class Menu:
         :param menu: The menu to add the widget to
         :return: The widget that was added to the menu
         """
+		wdg_id = my_wdg.id if hasattr(my_wdg, "id") and my_wdg.id else my_wdg.title
 		if isinstance(my_wdg, MyRangeSlider):
-			wdg = menu.add.range_slider(my_wdg.title, my_wdg.default, (0, 1), 0.01, rangeslider_id=my_wdg.title, range_text_value_enabled=False, slider_text_value_enabled=False, value_format=lambda x: str(int(x * 100)), onchange=my_wdg.onchange)
+			wdg = menu.add.range_slider(my_wdg.title, my_wdg.default, (0, 1), 0.01, rangeslider_id=wdg_id, range_text_value_enabled=False, slider_text_value_enabled=False, value_format=lambda x: str(int(x * 100)), onchange=my_wdg.onchange)
 		elif isinstance(my_wdg, MyButton):
 			wdg = menu.add.button(my_wdg.title, my_wdg.action)
 		elif isinstance(my_wdg, MyDropSelect):
-			wdg = menu.add.dropselect(my_wdg.title, my_wdg.items, default=0, dropselect_id=my_wdg.title, placeholder=my_wdg.items[0][0], placeholder_add_to_selection_box=False, onchange=my_wdg.onchange)
+			wdg = menu.add.dropselect(my_wdg.title, my_wdg.items, default=my_wdg.default, dropselect_id=wdg_id, placeholder=my_wdg.items[0][0], placeholder_add_to_selection_box=False, onchange=my_wdg.onchange,
+									  selection_option_font=my_wdg.option_font, selection_option_font_color=WHITE, selection_option_selected_font_color=WHITE, selection_box_border_color=WHITE,
+									  selection_box_bgcolor=COLOR_WIDGETS[WidgetState.NORMAL], selection_option_selected_bgcolor=COLOR_WIDGETS[WidgetState.NORMAL])
 		elif isinstance(my_wdg, MySelector):
-			wdg = menu.add.selector(my_wdg.title, my_wdg.items, my_wdg.default, selector_id=my_wdg.title, onchange=my_wdg.onchange, style=pygame_menu.widgets.SELECTOR_STYLE_CLASSIC)
+			wdg = menu.add.selector(my_wdg.title, my_wdg.items, my_wdg.default, selector_id=wdg_id, onchange=my_wdg.onchange, style=pygame_menu.widgets.SELECTOR_STYLE_CLASSIC)
 		elif isinstance(my_wdg, MyTextInput):
-			wdg = menu.add.text_input(my_wdg.title, my_wdg.default, textinput_id=my_wdg.title, maxchar=my_wdg.maxchar, maxwidth=int(MAX_WIDTH_FOR_TEXT_INPUT * self.scaling_factor), onreturn=my_wdg.onreturn, copy_paste_enable=True)
+			wdg = menu.add.text_input(my_wdg.title, my_wdg.default, textinput_id=wdg_id, maxchar=my_wdg.maxchar, maxwidth=int(MAX_WIDTH_FOR_TEXT_INPUT * self.scaling_factor), onreturn=my_wdg.onreturn, copy_paste_enable=True)
 		else:
 			raise TypeError(f"Expected {type(MyWidget)}, got {type(my_wdg)} instead")
 		wdg = wdg.add_self_to_kwargs()
@@ -644,24 +682,41 @@ class Menu:
 							msg_label.show()
 					self.update_display()
 		self.snake_controls[self.sel_player_id_in_submenu_controls] = keys
-		self.update_submenu_controls()
+		self.update_submenu_controls(True, False)
 		self.mini_menu_change_controls.disable()
 		self.submenu_controls.enable()
 
-	def update_submenu_controls(self) -> None:
+	def change_color(self, sel_item_and_index, sel_value, **kwargs) -> None:
+		"""Change the color in the submenu controls. Standard callback function of the resp. dropselect widget"""
+		pre_color = self.snake_colors[self.sel_player_id_in_submenu_controls]
+		post_color = sel_value
+		self.snake_colors = [pre_color if color == post_color else post_color if color == pre_color else color for color in self.snake_colors]
+		self.update_submenu_controls(False, True)
+
+	def update_submenu_controls(self, update_controls: bool = True, update_color: bool = True) -> None:
 		"""Update the key representation in the controls submenu when new controls for a snake got defined"""
 		if hasattr(self, "submenu_controls"):
-			bg_img = self.submenu_controls.get_widget(CONTROLS_BG_IMG_ID)
-			img_centerx, img_centery = bg_img.get_rect().center
-			diff = int(CONTROL_LBL_TO_BG_RATIO * bg_img.get_width())
-			trg_centers = [(img_centerx, img_centery - diff), (img_centerx - diff, img_centery), (img_centerx, img_centery + diff), (img_centerx + diff, img_centery)]
-			for lbl_id, pygame_key, trg_center in zip(CONTROLS_LABEL_IDS, self.snake_controls[self.sel_player_id_in_submenu_controls], trg_centers):
-				lbl = self.submenu_controls.get_widget(lbl_id)
-				lbl.set_title(utils.get_descr_from_pygame_key(pygame_key))
-				if (cur_center := lbl.get_rect().center) != trg_center:
-					cur_translate = lbl.get_translate()
-					add_translate = utils.subtract_tuples_int(trg_center, cur_center)
-					lbl.translate(*utils.add_two_tuples(cur_translate, add_translate))
+			if update_controls:
+				# update controls part
+				bg_img = self.submenu_controls.get_widget(CONTROLS_BG_IMG_ID)
+				img_centerx, img_centery = bg_img.get_rect().center
+				diff = int(CONTROL_LBL_TO_BG_RATIO * bg_img.get_width())
+				trg_centers = [(img_centerx, img_centery - diff), (img_centerx - diff, img_centery), (img_centerx, img_centery + diff), (img_centerx + diff, img_centery)]
+				for lbl_id, pygame_key, trg_center in zip(CONTROLS_LABEL_IDS, self.snake_controls[self.sel_player_id_in_submenu_controls], trg_centers):
+					lbl = self.submenu_controls.get_widget(lbl_id)
+					lbl.set_title(utils.get_descr_from_pygame_key(pygame_key))
+					if (cur_center := lbl.get_rect().center) != trg_center:
+						cur_translate = lbl.get_translate()
+						add_translate = utils.subtract_tuples_int(trg_center, cur_center)
+						lbl.translate(*utils.add_two_tuples(cur_translate, add_translate))
+			if update_color:
+				# update color part
+				color_img = self.submenu_controls.get_widget(SNAKE_COLOR_IMG_ID)
+				assert isinstance(color_img, pygame_menu.widgets.Image), f"Expected Image type, got {type(color_img)} instead."
+				color = self.snake_colors[self.sel_player_id_in_submenu_controls]
+				color_img.set_image(self.snake_color_imgs[color])
+				sel_color = self.submenu_controls.get_widget(SNAKE_COLOR_SEL_ID)
+				sel_color.set_value([color_item[0] for color_item in COLOR_ITEMS if color_item[1] == color][0])
 
 	def update_submenu_highscore(self) -> None:
 		"""Update the highscores in the resp. submenu when the level to be displayed got changed"""
@@ -736,6 +791,9 @@ class Menu:
 	def change_num_players(self, sel_item_and_index, sel_value, **kwargs) -> None:
 		"""Change the number of players. Callback function for the resp. dropdown widget"""
 		self.num_players = sel_value
+		sel_player = self.submenu_controls.get_widget(PLAYER_SEL_ID)
+		assert isinstance(sel_player, pygame_menu.widgets.Selector), f"Expected selector, got {type(sel_player)} instead."
+		sel_player.update_items(PLAYER_ITEMS[:self.num_players])
 		if "widget" in kwargs and isinstance(wdg := kwargs["widget"], pygame_menu.widgets.Widget):
 			self.adjust_font_size_to_fit_trg_wdg_size(wdg, self.button_size)
 			self.set_wdg_background(wdg, self.button_size)
@@ -754,7 +812,7 @@ class Menu:
 	def change_player_in_submenu_controls(self, sel_item_and_index, sel_value, **kwargs) -> None:
 		"""Change the player whose controls are displayed in the controls submenu. Callback function for the resp. selector widget"""
 		self.sel_player_id_in_submenu_controls = sel_value
-		self.update_submenu_controls()
+		self.update_submenu_controls(True, True)
 
 	def change_level_in_submenu_highscore(self, sel_item_and_index, sel_value, **kwargs) -> None:
 		"""Change the level in the highscore submenu. Callback function for the resp. selector widget"""
@@ -773,7 +831,12 @@ class Menu:
 	def set_controls(self, controls: [[int, int, int, int]]) -> None:
 		"""Update the snake controls in the menu"""
 		self.snake_controls = controls
-		self.update_submenu_controls()
+		self.update_submenu_controls(True, False)
+
+	def set_colors(self, colors: [(int, int, int)]):
+		"""Update the snake colors in the menu"""
+		self.snake_colors = colors
+		self.update_submenu_controls(False, True)
 
 	def set_highscore(self, level_idx: int, highscore: [(str, str)]) -> None:
 		"""Set the highscore for the given level to the given score"""
@@ -796,9 +859,9 @@ class Menu:
         :return: Tuple containing [0] the index of the selected level, [1] the number of players, [2] the sound volume, [3] the controls of all four players
         """
 		if self.submenu_levels:
-			return self.level_idx, self.num_players, self.sound_volume, self.snake_controls
+			return self.level_idx, self.num_players, self.sound_volume, self.snake_controls, self.snake_colors
 		else:
-			return None, None, self.sound_volume, self.snake_controls
+			return None, None, self.sound_volume, self.snake_controls, self.snake_colors
 
 	def update_display(self) -> None:
 		"""Display the current state on the screen"""
