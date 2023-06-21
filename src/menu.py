@@ -300,20 +300,23 @@ class Menu:
 		block_height = self.button_size[1] + free_space
 		top_margin = int(OPTIONS_TOP_MARGIN * self.scaling_factor)
 		main_frame = submenu_controls.add.frame_v(self.buttons_area_rect.w, self.buttons_area_rect.h + 2 * top_margin, padding=0)
-		vert_margin_right = int(0.5 * (block_height - change_button.get_height()))
-		hor_frame_height = max(sel_color.get_height() + snake_img.get_height(), control_bg_img.get_height() + change_button.get_height()) + 2 * vert_margin_right
-		hor_frame = submenu_controls.add.frame_h(main_frame.get_width(), hor_frame_height, padding=0)
+		vert_margin_right = max(1, int(0.5 * (block_height - change_button.get_height())))
+		vert_margin_left = max(1, int((control_bg_img.get_height() - snake_img.get_height()) / 2))
+		# hor_frame_height = max(sel_color.get_height() + snake_img.get_height(), control_bg_img.get_height() + change_button.get_height()) + 2 * vert_margin_right
+		left_frame_height = vert_margin_left + snake_img.get_height() + vert_margin_left + vert_margin_right + sel_color.get_height()
+		right_frame_height = control_bg_img.get_height() + change_button.get_height() + vert_margin_right
+		# hor_frame_height = max(left_frame_height, right_frame_height)
+		hor_frame = submenu_controls.add.frame_h(main_frame.get_width(), max(left_frame_height, right_frame_height), padding=0)
 		vert_frames = [submenu_controls.add.frame_v(0.5 * hor_frame.get_width(), hor_frame.get_height(), padding=0) for _ in range(2)]
 		main_frame.pack(submenu_controls.add.vertical_margin(top_margin))
 		main_frame.pack(sel_player, align=pygame_menu.locals.ALIGN_CENTER)
 		main_frame.pack(submenu_controls.add.vertical_margin(max(1, block_height - sel_player.get_height())))
 		vert_frames[1].pack(control_bg_img, align=pygame_menu.locals.ALIGN_CENTER)
-		vert_frames[1].pack(submenu_controls.add.vertical_margin(max(1, vert_margin_right)))
+		vert_frames[1].pack(submenu_controls.add.vertical_margin(vert_margin_right))
 		vert_frames[1].pack(change_button, align=pygame_menu.locals.ALIGN_CENTER)
-		vert_margin_left = int((control_bg_img.get_height() - snake_img.get_height()) / 2)
 		vert_frames[0].pack(submenu_controls.add.vertical_margin(vert_margin_left))
 		vert_frames[0].pack(snake_img, align=pygame_menu.locals.ALIGN_CENTER)
-		vert_frames[0].pack(submenu_controls.add.vertical_margin(max(1, vert_margin_left + vert_margin_right)))
+		vert_frames[0].pack(submenu_controls.add.vertical_margin(vert_margin_left + vert_margin_right))
 		vert_frames[0].pack(sel_color, align=pygame_menu.locals.ALIGN_CENTER)
 		# The center of a label part is [156/442 * image_width] away from the center of the image
 		img_centerx, img_centery = control_bg_img.get_rect().center
@@ -440,8 +443,8 @@ class Menu:
 			wdg = menu.add.button(my_wdg.title, my_wdg.action)
 		elif isinstance(my_wdg, MyDropSelect):
 			wdg = menu.add.dropselect(my_wdg.title, my_wdg.items, default=my_wdg.default, dropselect_id=wdg_id, placeholder=my_wdg.items[0][0], placeholder_add_to_selection_box=False, onchange=my_wdg.onchange,
-									  selection_option_font=my_wdg.option_font, selection_option_font_color=WHITE, selection_option_selected_font_color=WHITE, selection_box_border_color=WHITE,
-									  selection_box_bgcolor=COLOR_WIDGETS[WidgetState.NORMAL], selection_option_selected_bgcolor=COLOR_WIDGETS[WidgetState.NORMAL])
+									  selection_option_font=my_wdg.option_font, selection_option_font_size=int(SEL_OPTION_FONT_SIZE * self.scaling_factor), selection_option_font_color=WHITE, selection_option_selected_font_color=WHITE,
+									  selection_box_border_color=WHITE, selection_box_bgcolor=COLOR_WIDGETS[WidgetState.NORMAL], selection_option_selected_bgcolor=COLOR_WIDGETS[WidgetState.NORMAL])
 		elif isinstance(my_wdg, MySelector):
 			wdg = menu.add.selector(my_wdg.title, my_wdg.items, my_wdg.default, selector_id=wdg_id, onchange=my_wdg.onchange, style=pygame_menu.widgets.SELECTOR_STYLE_CLASSIC)
 		elif isinstance(my_wdg, MyTextInput):
@@ -501,7 +504,7 @@ class Menu:
 	def slide_in(self) -> None:
 		"""Slide the menu in from the left edge."""
 		assert self.bg_img, "Background image must exist for slide_in method"
-		speed = 10
+		speed = int(7 * self.scaling_factor)
 		cur_topleft = (-self.menu_rect.w, self.menu_rect.top)
 		while cur_topleft[0] <= 0:
 			self.main_surface.blit(self.bg_img, (0, 0))

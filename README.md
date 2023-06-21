@@ -2,13 +2,13 @@
 Friendly Snakes is a multiplayer cooperative variant of the classic snake game. Up to four players each control their own snake, eating (and drinking) items that change the snakes size, speed, controls, avoiding fire, bombs and explosions, surviving as long as possible while getting larger and larger. But the larger the snakes, the less room there is to maneuver, and suddenly your snake might be trapped without an escape route. Work together and let the snakes shine!
 
 ## Installation
-A stand-alone installer can be found here: <Add GitHub repo for installer>
-TODO: Add info about installer (different GitHub repo)
+The repository already contains a ready-to-use executable file for win64. Just download the zip file (i.e. click the green *Code*-button in the top right, then choose *Download ZIP*), unpack it, navigate to the *build_win64* directory and open *friendly_snakes.exe*.
+If you have a GitHub account, you can of course just clone the repo as well instead of downloading the zip.
 
 ## How To Play
 The game is mostly self-explanatory. Just try it out and see what happens :).
 
-If you still like to know some infos beforehand, go ahead:
+If you still like to know some infos beforehand, read ahead:
 The game is played on one device. Each player controls their snake with four keyboard keys. The default keys and colors are shown below. To customize them, choose "Controls" in the start menu.
 
 |Action|Player 1|Player 2|Player 3|Player 4|
@@ -46,8 +46,8 @@ The python code uses the following packages:
 - cx-Freeze v6.14.7
 
 ## Troubleshooting
-In case of problems contact me on Discord (BeXXsor) or GitHub.
+In case of problems contact me on Discord (BeXXsor).
 
 ## Credits
 - Game design and implementation: **Thomas Schneider**
-- Further credits: see "Credits.md"
+- Further credits: see *Credits.md*
