@@ -14,18 +14,12 @@ pygame.init()
 
 # ----- Constants ------
 FILENAME_LEVEL_INFO = "../res/levels.json"
-FILENAME_ITEM_SOUNDS = {utils.Objects.APPLE: "../res/eat.ogg", utils.Objects.MELON: "../res/eat.ogg", utils.Objects.CHILI: "../res/eat.ogg",
-                        utils.Objects.COFFEE: "../res/slurp.ogg", utils.Objects.TEA: "../res/slurp.ogg", utils.Objects.BEER: "../res/burp.ogg",
-                        utils.Objects.BOMB: "../res/bomb.ogg", utils.Objects.EXPLOSION: "../res/explosion.ogg", utils.Objects.FIRE_SPIT: "../res/fire_spit.ogg"}
-FILENAME_CRASH_SOUND = "../res/crash.ogg"
 UPDATE_SNAKES = [pygame.event.custom_type() for _ in range(4)]
 REOCC_TIMER = pygame.event.custom_type()
 START_MENU_TOPLEFT = (0, 300)
 START_MENU_SIZE = (670, 705)
 PAUSE_MENU_TOPLEFT = (0, 300)
 PAUSE_MENU_SIZE = (670, 705)
-FILENAME_START_BG = "../res/menu_bg.png"
-FILENAME_PAUSE_MENU_BG = "../res/menu_bg.png"
 
 
 # ----- Classes --------
@@ -51,7 +45,7 @@ class Communicator:
         self.levels_as_json = self.read_level_infos()
         self.highscores = [level.highscore for level in self.levels]
         self.level = self.levels[self.level_idx]
-        utils.play_music_track(FILENAMES_MUSIC_TRACKS[0], 0.1)
+        utils.play_music_track(FILENAMES_MUSIC_TRACKS[0][1], 0.1)
         self.sound_volume = 1.0
         self.scaling_factor = self.main_surface.get_height() / BENCHMARK_HEIGHT
         self.start_bg_img = pygame.transform.scale(pygame.image.load(FILENAME_START_BG).convert_alpha(), self.main_surface.get_size())
@@ -88,9 +82,6 @@ class Communicator:
         self.set_start_screen()
         self.init_start_menu()
         self.game: Game
-        # self.game = Game(self.snake_names, self.snake_colors, self.snake_controls, self.level)
-        # self.game = Game(self.snake_names[:1], self.snake_colors[:1], self.snake_controls[:1], self.level)
-        # self.game = Game(self.snake_names[:2], self.snake_colors[:2], self.snake_controls[:2], self.level)
         self.graphics = Graphics(self.main_surface, self.level.num_rows, self.level.num_cols)
         self.upd_snake_events = [pygame.event.Event(event_id, {"snake_idx": idx}) for idx, event_id in enumerate(UPDATE_SNAKES)]
         self.reocc_event = pygame.event.Event(REOCC_TIMER, {"duration": REOCC_DUR})
@@ -99,7 +90,6 @@ class Communicator:
         self.sounds_all = list(self.item_sounds.values()) + [self.crash_sound]
         self.paused = False
         self.back_to_main_menu = False
-        # self.pause_start_time = 0
         self.paused_time = 0
         self.clock = pygame.time.Clock()
 

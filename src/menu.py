@@ -298,8 +298,8 @@ class Menu:
 		# self.menu_base_image = pygame_menu.BaseImage(image_path=FILENAME_MENU_FRAME, drawing_mode=pygame_menu.baseimage.IMAGE_MODE_FILL)
 		my_widgets = [MyRangeSlider("Music volume", self.music_volume, self.change_music_volume),
 					  MyRangeSlider("Sound volume", self.sound_volume, self.change_sound_volume),
-					  MyDropSelect("Music Track", MUSIC_TRACK_ITEMS, self.change_music_track),
-					  MyDropSelect("Background", BG_ITEMS, self.change_background)]
+					  MyDropSelect("Music Track", FILENAMES_MUSIC_TRACKS, self.change_music_track, option_font=FONT_COURIER_NEW),
+					  MyDropSelect("Background", BG_ITEMS, self.change_background, option_font=FONT_COURIER_NEW)]
 		menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=self.button_std_font, widget_font_antialias=True, widget_font_color=WHITE)
 		buttons_offset = self.buttons_surf.get_abs_offset()
 		submenu_options = pygame_menu.Menu("Options", self.buttons_area_rect.w, self.buttons_area_rect.h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=menu_theme)
@@ -782,8 +782,9 @@ class Menu:
 		wdg_set_background(widget, bg_color)
 
 	def change_music_track(self, sel_item_and_index, sel_value, **kwargs) -> None:
-		utils.play_music_track(FILENAMES_MUSIC_TRACKS[sel_value], self.music_volume)
-		self.cur_track_idx = sel_value
+		if sel_value != self.cur_track_idx:
+			utils.play_music_track(sel_item_and_index[0][1], self.music_volume)
+			self.cur_track_idx = sel_value
 
 	def change_background(self, sel_item_and_index, sel_value, **kwargs) -> None:
 		pass
