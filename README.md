@@ -40,18 +40,4 @@ In case of problems contact me on Discord (BeXXsor) or GitHub.
 
 ## Credits
 - Game design and implementation: **Thomas Schneider**
-- Graphics:
-  - Items: magdum, https://opengameart.org/content/32x32-food-set | thekingphoenix, https://opengameart.org/content/cc0-food-icons | Fleurman, https://opengameart.org/content/cc0-food-icons | GDJ, https://openclipart.org/detail/228333
-  - Bomb & Explosion animation: Based on momopey, https://opengameart.org/content/pixel-art-bomb-animation, adjusted by me 
-  - Menu Background: Design by me based on the following sources: https://www.pngwing.com/en/free-png-bcglq, https://www.pngwing.com/en/free-png-tszci, https://www.pngwing.com/en/free-png-bqtsy, https://www.pngwing.com/en/free-png-zrkot, https://www.pngwing.com/en/free-png-nepqc, https://www.pngwing.com/en/free-png-vwdzk, https://www.pngwing.com/en/free-png-bqiry, https://www.pngwing.com/en/free-png-ihwzr
-  - Game Backgrounds: txturs, https://opengameart.org/content/2048-digitally-painted-tileable-desert-sand-texture
-- Music:
-  - 3xBlast, https://opengameart.org/content/happymelancholic-synth-bells-song-adaptive-layers-pack
-- Sounds:
-  - Pixabay, https://pixabay.com/sound-effects/ed-burp-and-pop-86789/ & https://pixabay.com/sound-effects/cartoon-slurp-37066/
-  - rubberduck, https://opengameart.org/content/80-cc0-creature-sfx
-  - soundslikewillem, https://freesound.org/people/soundslikewillem/sounds/184519/ (slightly adjusted by me, esp. volume and speed)
-  - deleted_user_5405837, https://freesound.org/people/deleted_user_5405837/sounds/399303/ (slightly adjusted by me, esp. volume and speed)
-- Fonts:
-  - "Snake Chan" by Darrell Flood: https://www.fontspace.com/snake-chan-font-f29621
-  - "Tehisa" by Sealoung: https://www.fontspace.com/tehisa-font-f45097
+- All credits: see "Credits.md"
