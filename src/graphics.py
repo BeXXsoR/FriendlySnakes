@@ -1,7 +1,6 @@
 """Module for the graphics class in the friendly snakes package"""
 
 # ----- Imports --------
-import utils
 from level import Level
 from snake import Snake
 from constants import *
@@ -59,7 +58,6 @@ class Graphics:
 		# Score rect
 		self.score_rect = pygame.rect.Rect((0, 0), (status_rect_size[0] * 0.5, status_rect_size[1]))
 		self.score_rect.topright = self.usable_rect.topright
-		# self.score_surface = self.main_surface.subsurface(self.score_rect)
 		# Prepare images
 		self.wall = pygame.transform.scale(pygame.image.load(FILENAME_WALL).convert_alpha(), self.square_size)
 		self.items_orig = {obj: pygame.image.load(filename).convert_alpha() for obj, filename in FILENAME_ITEMS.items()}
@@ -83,23 +81,20 @@ class Graphics:
 	def update_display(self, level: Level, snakes: [Snake], crashes: [((int, int), (int, int))], bombs: {(int, int): int}, explosions: {(int, int): int}, paused_time: int) -> None:
 		"""Draw everything onto the screen"""
 		# Draw background
-		# self.main_surface.fill(BG_COLOR)
 		self.main_surface.blit(self.bg, (0, 0))
 		# Draw level
-		# wall_color = GREY
 		for row, obj_row in enumerate(level.map):
 			for col, obj in enumerate(obj_row):
 				grid_pos = (row, col)
 				screen_pos = self.grid_to_screen_pos(grid_pos)
 				if obj == utils.Objects.WALL:
 					self.map_surface.blit(self.wall, screen_pos)
-					# pygame.draw.rect(self.map_surface, wall_color, pygame.rect.Rect(screen_pos, self.square_size))
 				elif obj == utils.Objects.BOMB:
 					cur_frame_id = self.bomb_anim.num_frames - bombs[grid_pos]
 					cur_frame = self.bomb_anim.pygame_frames[cur_frame_id]
 					self.map_surface.blit(cur_frame, screen_pos)
 				elif obj == utils.Objects.EXPLOSION:
-					# Do nothing here, explosions are handled seperately later (so that for explosions at the edge, the explosions are only drawn after the wall has been drawn)
+					# Do nothing here, explosions are handled separately later (so that for explosions at the edge, the explosions are only drawn after the wall has been drawn)
 					pass
 				elif obj != utils.Objects.NONE:
 					self.map_surface.blit(self.items[obj], screen_pos)
@@ -115,7 +110,7 @@ class Graphics:
 			for idx, pos in enumerate(snake.pos):
 				screen_pos = self.grid_to_screen_pos(pos)
 				if idx == 0 and snake.color in self.snake_parts:
-					# snake head (incl. piquancy and drunk animation)
+					# Snake head (incl. piquancy and drunk animation)
 					self.map_surface.blit(pygame.transform.rotate(self.snake_parts[snake.color][utils.SnakeParts.HEAD.value], ROTATIONS_STRAIGHT[head_orientation]), screen_pos)
 					if snake.piquancy_growing > 0:
 						cur_frame_id = self.piqu_rising_anim.num_frames - snake.piquancy_growing
@@ -126,11 +121,11 @@ class Graphics:
 						cur_frame = self.drunk_anim.pygame_frames[cur_frame_id]
 						self.map_surface.blit(pygame.transform.rotate(cur_frame, ROTATIONS_STRAIGHT[head_orientation] % 180), screen_pos)
 				elif idx == len(snake.pos) - 1 and snake.color in self.snake_parts:
-					# snake tail
+					# Snake tail
 					tail_orientation = utils.subtract_tuples_int(snake.pos[idx - 1], pos)
 					self.map_surface.blit(pygame.transform.rotate(self.snake_parts[snake.color][utils.SnakeParts.TAIL.value], ROTATIONS_STRAIGHT[tail_orientation]), screen_pos)
 				elif idx != len(snake.pos) - 1 and snake.color in self.snake_parts:
-					# snake body
+					# Snake body
 					orientation_front = utils.subtract_tuples_int(snake.pos[idx - 1], pos)
 					orientation_back = utils.subtract_tuples_int(pos, snake.pos[idx + 1])
 					if orientation_front == orientation_back:
@@ -140,8 +135,6 @@ class Graphics:
 						snake_part_idx = utils.SnakeParts.BODY_CORNER.value
 						rotation = ROTATIONS_CORNER[(orientation_front, orientation_back)]
 					self.map_surface.blit(pygame.transform.rotate(self.snake_parts[snake.color][snake_part_idx], rotation), screen_pos)
-				else:
-					pygame.draw.rect(self.map_surface, snake.color, pygame.rect.Rect(screen_pos, self.square_size))
 			# Draw spit fire
 			if snake.spit_fire_posis:
 				screen_pos = self.grid_to_screen_pos(snake.spit_fire_posis[0 if head_orientation in [ORIENT_RIGHT, ORIENT_DOWN] else -1])
@@ -203,14 +196,5 @@ class Graphics:
 			self.bg = self._cached_bgs[bg_name]
 
 	def display_map(self, level: Level):
+		"""Display the map without any snakes."""
 		self.update_display(level, [], [], {}, {}, 0)
-
-		# self.main_surface.fill(BG_COLOR)
-		# # Draw level
-		# wall_color = GREY
-		# for row, obj_row in enumerate(level.map):
-		# 	for col, obj in enumerate(obj_row):
-		# 		screen_pos = self.grid_to_screen_pos((row, col))
-		# 		if obj == utils.Objects.WALL:
-		# 			pygame.draw.rect(self.map_surface, wall_color, pygame.rect.Rect(screen_pos, self.square_size))
-		# pygame.display.update()

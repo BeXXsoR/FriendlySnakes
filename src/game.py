@@ -1,9 +1,9 @@
 """Module for the game class in the friendly snakes package"""
-import copy
+
 # ----- Imports --------
+import copy
 import itertools
 import random
-import utils
 from snake import Snake
 from level import Level
 from constants import *
@@ -17,22 +17,20 @@ pygame.init()
 # ----- Classes --------
 class Game:
 	"""The main game class"""
+
 	def __init__(self, player_names: [str], player_colors: [(int, int, int)], player_controls: [{}], level: Level):
 		self.level = level
 		self.snakes = [Snake(name, idx, color, controls) for idx, (name, color, controls) in enumerate(zip(player_names, player_colors, player_controls))]
 		self.init_snake_pos()
-		# crashes is a list of tuples of positions. For each crash that occurred, it holds the coordinates of the
-		# two squares between which the crash happened
+		# crashes is a list of tuples of positions. For each crash that occurred, it holds the coordinates of the two squares between which the crash happened
 		self.crashes: [((int, int), (int, int))] = []
 		self.free_squares = set([(i, j) for i, row in enumerate(level.map) for j, obj in enumerate(row) if obj == utils.Objects.NONE]) - set([pos for snake in self.snakes for pos in snake.pos])
 		self.passed_reoccs = 0
-		# counters is a dict tracking the game elements that needs to be updated every second. Its keys are tuples of
-		# type (utils.Cntable, int), where the former shows the kind of element and the latter the additional index
-		# corresponding to that kind of element (e.g. (utils.Cntable.BOMB, 0) would refer to bomb #0 in the bombs list.
-		# If no additional index is needed, None is used for the latter.
-		# The values of the dict are ints showing the countdown for the specific element w.r.t. to REOCC_DUR.
+		# counters is a dict tracking the game elements that needs to be updated every second. Its keys are tuples of type (utils.Cntable, int), where the former shows the kind of element and the latter the additional index
+		# corresponding to that kind of element (e.g. (utils.Cntable.BOMB, 0) would refer to bomb #0 in the bombs list. If no additional index is needed, None is used for the latter.
+		# The values of the dict are ints showing the countdown for the specific element w.r.t. REOCC_DUR.
 		self.counters = {(utils.Cntble.DROP_ITEM, None): self.level.drop_rate * REOCC_PER_SEC}
-		# self.bombs is a dict of all bombs. Key is the location of the bomb, value is the countdown and the orientation of the bomb
+		# bombs is a dict of all bombs. Key is the location of the bomb, value is the countdown and the orientation of the bomb
 		self.bombs: {(int, int): (int, (int, int))} = {}
 		self.explosions: {(int, int): int} = {}
 
@@ -48,7 +46,7 @@ class Game:
 		self.__init__(names, colors, controls, self.level)
 
 	def init_snake_pos(self) -> None:
-		"""Initialize the positions of the snakes"""
+		"""Initialize the positions of the snakes."""
 		for snake, pos in zip(self.snakes, self.level.start_pos):
 			snake.pos = pos
 
@@ -77,7 +75,7 @@ class Game:
 		new_spit_fire_posis = []
 		rem_spit_fire_posis = [snake.spit_fire_posis for snake in self.snakes if snake not in snakes_to_upd]
 		objects = []
-		# update snake positions locally and check for collisions with obstacles
+		# Update snake positions locally and check for collisions with obstacles
 		for snake in snakes_to_upd:
 			new_square = utils.add_tuples([snake.head, snake.orientation])
 			obj_at_new_pos = self.level.map[new_square[0]][new_square[1]]
@@ -125,14 +123,13 @@ class Game:
 				snake.pos = new_pos
 				snake.spit_fire_posis = new_spit_fire_pos
 				snake.score += ITEM_SCORES.get(obj, 0)
-		# Check for crashes by snakes getting burned (only after the snake posis got updated, so that the new posis
-		# incl. the new fire spit gets drawn on the screen)
+		# Check for crashes by snakes getting burned (only after the snake posis got updated, so that the new posis incl. the new fire spit gets drawn on the screen)
 		fire_posis = new_spit_fire_posis + rem_spit_fire_posis
 		self.crashes.extend([(pos, pos) for snake_pos, fire_pos in itertools.product(new_posis + remaining_posis, fire_posis) for pos in snake_pos if pos in fire_pos])
 		return objects
 
 	def update_counting(self) -> [utils.Objects]:
-		"""Update all counting game elements and return a list of new objects (only bombs and explosions)"""
+		"""Update all counting game elements and return a list of new objects (only bombs and explosions)."""
 		new_obj = []
 		# Update explosions
 		explosions_copy = copy.deepcopy(self.explosions)
@@ -161,7 +158,7 @@ class Game:
 				# Countdown reaches zero, handle it depending on the element
 				match elem:
 					case utils.Cntble.DROP_ITEM:
-						# drop a new item on the map
+						# Drop a new item on the map
 						i, j = random.choice(list(self.free_squares))
 						new_object = random.choice(self.level.items)
 						self.level.map[i][j] = new_object
@@ -252,12 +249,12 @@ class Game:
 		"""
 		Return the bomb dictionary that is needed for updating the display.
 
-		:return: A dict containing one item per bomb, the bomb's position as key and its countdown as value
+		:return: A dict containing one item per bomb, with the bomb's position as key and its countdown as value
 		"""
 		return {pos: cntdwn for pos, (cntdwn, _) in self.bombs.items()}
 
 	def update_spit_fire_posis(self, snake: Snake):
-		"""Updates the spit fire posis for the given snake"""
+		"""Updates the spit fire posis for the given snake."""
 		if snake.spits_fire > 0:
 			snake.spit_fire_posis = utils.get_spit_fire_squares(snake.pos[0], snake.orientation, SPIT_FIRE_RANGE, self.level.map)
 		else:

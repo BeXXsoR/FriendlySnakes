@@ -19,8 +19,7 @@ class Snake:
 		self.idx = idx
 		self.color = color
 		self.score = 0
-		# controls is a dict for the inputs that control the snake. Keys are the keyboard keys as pygame constants,
-		# values are the orientations (as (int, int) tuples)
+		# controls is a dict for the inputs that control the snake. Keys are the keyboard keys as pygame constants, values are the orientations (as (int, int) tuples)
 		self.controls = controls
 		self._pos = None
 		self.head = None
@@ -67,8 +66,7 @@ class Snake:
 		self.is_growing += size
 
 	def adjust_speed(self, summand: int):
-		"""Adjust the speed of the snake by multiplying it with the given factor"""
-		# self.speed = max(MIN_SNAKE_SPEED, min(int(factor * self.speed), MAX_SNAKE_SPEED))
+		"""Adjust the speed of the snake by adding the given summand"""
 		self.speed = max(MIN_SNAKE_SPEED, min(int(summand + self.speed), MAX_SNAKE_SPEED))
 
 	def update_counting(self) -> int:

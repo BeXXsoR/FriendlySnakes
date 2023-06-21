@@ -1,7 +1,6 @@
 """Module for the communicator class in the friendly snakes package"""
 
 # ----- Imports --------
-import utils
 import json
 from menu import Menu
 from game import Game
@@ -13,13 +12,8 @@ import pygame
 pygame.init()
 
 # ----- Constants ------
-FILENAME_LEVEL_INFO = "../res/levels.json"
 UPDATE_SNAKES = [pygame.event.custom_type() for _ in range(4)]
 REOCC_TIMER = pygame.event.custom_type()
-START_MENU_TOPLEFT = (0, 300)
-START_MENU_SIZE = (670, 705)
-PAUSE_MENU_TOPLEFT = (0, 300)
-PAUSE_MENU_SIZE = (670, 705)
 
 
 # ----- Classes --------
@@ -52,7 +46,7 @@ class Communicator:
         self.scaling_factor = self.main_surface.get_height() / BENCHMARK_HEIGHT
         self.start_bg_img = pygame.transform.scale(pygame.image.load(FILENAME_START_BG).convert_alpha(), self.main_surface.get_size())
         self.start_menu = Menu(self.main_surface,
-                               pygame.Rect(utils.mult_tuple_to_int(START_MENU_TOPLEFT, self.scaling_factor), utils.mult_tuple_to_int(START_MENU_SIZE, self.scaling_factor)),
+                               pygame.Rect(utils.mult_tuple_to_int(MENU_TOPLEFT, self.scaling_factor), utils.mult_tuple_to_int(MENU_SIZE, self.scaling_factor)),
                                self.start_bg_img,
                                self.scaling_factor,
                                self.lang,
@@ -62,7 +56,7 @@ class Communicator:
                                True,
                                True)
         self.pause_menu = Menu(self.main_surface,
-                               pygame.Rect(utils.mult_tuple_to_int(PAUSE_MENU_TOPLEFT, self.scaling_factor), utils.mult_tuple_to_int(PAUSE_MENU_SIZE, self.scaling_factor)),
+                               pygame.Rect(utils.mult_tuple_to_int(MENU_TOPLEFT, self.scaling_factor), utils.mult_tuple_to_int(MENU_SIZE, self.scaling_factor)),
                                None,
                                self.scaling_factor,
                                self.lang,
@@ -72,7 +66,7 @@ class Communicator:
                                False,
                                False)
         self.game_over_menu = Menu(self.main_surface,
-                                   pygame.Rect(utils.mult_tuple_to_int(PAUSE_MENU_TOPLEFT, self.scaling_factor), utils.mult_tuple_to_int(PAUSE_MENU_SIZE, self.scaling_factor)),
+                                   pygame.Rect(utils.mult_tuple_to_int(MENU_TOPLEFT, self.scaling_factor), utils.mult_tuple_to_int(MENU_SIZE, self.scaling_factor)),
                                    None,
                                    self.scaling_factor,
                                    self.lang,
@@ -96,7 +90,7 @@ class Communicator:
         self.clock = pygame.time.Clock()
 
     def update_param_from_menu(self, menu: Menu) -> None:
-        """Get the relevant infos from the given menu and update the internal parameters"""
+        """Get the relevant infos from the given menu and update the internal parameters."""
         level_idx, num_players, new_sound_volume, new_controls, new_colors, new_bg_name, new_music_track_name = menu.get_infos()
         if level_idx is not None:
             self.level_idx = level_idx
@@ -134,7 +128,8 @@ class Communicator:
                 menu.set_music_track_value(new_music_track_name)
             self.music_track_name = new_music_track_name
 
-    def set_start_screen(self):
+    def set_start_screen(self) -> None:
+        """Set the starting screen and display it."""
         self.main_surface.blit(self.start_bg_img, (0, 0))
         msg_font = pygame.font.Font(FONT_SNAKE_CHAN, 40)
         msg_rendered = msg_font.render("Press any key", True, WHITE)
@@ -142,14 +137,15 @@ class Communicator:
         pygame.display.update()
 
     def read_level_infos(self) -> {}:
-        """Reads the level infos from the json file"""
+        """Return the level infos from the json file."""
         with (open(FILENAME_LEVEL_INFO)) as file_level_info:
             level_infos = json.load(file_level_info)
         for level_info in level_infos:
             self.levels.append(Level(level_info))
         return level_infos
 
-    def init_start_menu(self):
+    def init_start_menu(self) -> None:
+        """Initialize the start menu after the user pressed a key."""
         # Wait for user pressing key
         key_pressed = False
         while not key_pressed:
@@ -163,10 +159,8 @@ class Communicator:
         cnt = 0
         while self.start_menu.handle_events():
             self.update_param_from_menu(self.start_menu)
-            # # Show map
-            # self.show_map()
-            # return
-            # if cnt == 0:
+            # Show Map - only relevant for taking screenshots of a map to use it for the preview images in the level selection screen
+            # return self.show_map()
             self.game = Game(self.snake_names[:self.num_players], self.snake_colors[:self.num_players], self.snake_controls[:self.num_players], self.level)
             if cnt > 0:
                 self.reset()
@@ -200,7 +194,7 @@ class Communicator:
         return resume
 
     def game_over(self) -> bool:
-        """Handle the game over situation"""
+        """Handle the game over situation. Return True if user wants to play again and False for exit."""
         self.game_over_menu.reset()
         self.game_over_menu.bg_img = self.main_surface.copy()
         score = sum([snake.score for snake in self.game.snakes]) if self.level.goal == utils.Goals.HIGHSCORE else int((pygame.time.get_ticks() - self.paused_time) / 1000)
@@ -226,11 +220,6 @@ class Communicator:
 
     def reset(self) -> None:
         """Reset the game so that it can be played again"""
-        # snake_names = [snake.name for snake in self.game.snakes]
-        # snake_colors = [snake.color for snake in self.game.snakes]
-        # snake_controls = [snake.controls for snake in self.game.snakes]
-        # self.level.reset()
-        # self.game = Game(snake_names, snake_colors, snake_controls, self.level, self.main_surface)
         self.game.reset()
         self.paused = False
         self.back_to_main_menu = False
@@ -250,7 +239,7 @@ class Communicator:
         """Main game loop"""
         self.reset_timer()
         self.graphics.update_display(*self.game.get_infos_for_updating_display(), paused_time=self.paused_time)
-        # let user press key to decide when to start
+        # Let user press a key to decide when to start
         cur_time = pygame.time.get_ticks()
         msg_font = pygame.font.Font(FONT_SNAKE_CHAN, 40)
         msg_rendered = msg_font.render("Press key to start", True, WHITE)
@@ -262,7 +251,7 @@ class Communicator:
                 if event.type == pygame.KEYUP:
                     key_pressed = True
         self.paused_time += (pygame.time.get_ticks() - cur_time)
-        # start game loop
+        # Start game loop
         crashed = False
         while not self.paused and not self.back_to_main_menu and not crashed:
             snake_ids_to_update = []
@@ -280,7 +269,7 @@ class Communicator:
                     # Update position of snake (only add to list here, real updating is done later)
                     snake_ids_to_update.append(event.snake_idx)
                 elif event.type == REOCC_TIMER and not crashed:
-                    # update all counting elements
+                    # Update all counting elements
                     new_objs = self.game.update_counting()
                     self.play_sounds(new_objs)
             # Update position of snakes
@@ -328,7 +317,8 @@ class Communicator:
         with (open(FILENAME_LEVEL_INFO, "w")) as file_level_info:
             json.dump(self.levels_as_json, file_level_info)
 
-    def show_map(self):
+    def show_map(self) -> None:
+        """Show the map without any snakes."""
         is_running = True
         while is_running:
             for event in pygame.event.get():

@@ -1,9 +1,16 @@
 """A module for global constants used across the friendly snakes package"""
 
 import utils
+from enum import Enum
+
+
+class WidgetState(Enum):
+	NORMAL = 0
+	PUSHED = 1
+	HOVERED = 2
+
 
 # ----- Constants ------
-# region Constants
 
 # --- Colors ---
 GREEN = (0, 153, 0)
@@ -17,6 +24,7 @@ ORANGE = (255, 128, 0)
 GREY = (192, 192, 192)
 BLACK = (0, 0, 0)
 BG_COLOR = (167, 226, 247)
+
 # --- Game parameters ---
 ORIENT_UP = (-1, 0)
 ORIENT_DOWN = (1, 0)
@@ -44,7 +52,8 @@ SPEEDING_SUMMANDS = {utils.Objects.COFFEE: 3, utils.Objects.TEA: -3}
 REOCC_DUR = 250
 REOCC_PER_SEC = int(1000 / REOCC_DUR)
 ITEM_SCORES = {utils.Objects.APPLE: 3, utils.Objects.MELON: 6, utils.Objects.COFFEE: 9, utils.Objects.TEA: 0, utils.Objects.BEER: 7, utils.Objects.CHILI: 5}
-# --- Graphics ---
+
+# --- Graphics In-Game ---
 FILENAME_SNAKE_PARTS = {GREEN: ["../res/snake_head_green.png", "../res/snake_body_straight_green.png", "../res/snake_body_corner_green.png", "../res/snake_tail_green.png"],
 						BLUE: ["../res/snake_head_blue.png", "../res/snake_body_straight_blue.png", "../res/snake_body_corner_blue.png", "../res/snake_tail_blue.png"],
 						CYAN: ["../res/snake_head_cyan.png", "../res/snake_body_straight_cyan.png", "../res/snake_body_corner_cyan.png", "../res/snake_tail_cyan.png"],
@@ -59,18 +68,29 @@ FILENAME_EXPLOSION = "../res/explosion.gif"
 FILENAME_DRUNK = "../res/drunk.gif"
 FILENAME_PIQU_RISING = "../res/piquancy_rising.gif"
 FILENAME_SPEEDO = "../res/speedo.png"
-# FILENAMES_BG = {utils.Backgrounds.DESERT: "../res/bg_desert.png"}
-FILENAME_START_BG = "../res/menu_bg.png"
-FILENAME_PAUSE_MENU_BG = "../res/menu_bg.png"
 FILENAMES_GAME_BGS = [("Desert", "../res/bg_desert.png"), ("Forest", "../res/forest.png"), ("Underwater", "../res/underwater.jpg"),
 					  ("Space", "../res/space.png"), ("Sky", "../res/sunny.png"), ("Night", "../res/full_moon.png")]
-# --- Sounds ---
+FILENAME_LEVEL_INFO = "../res/levels.json"
+
+# --- Graphics Menu ---
+FILENAME_START_BG = "../res/menu_bg.png"
+FILENAME_PAUSE_MENU_BG = "../res/menu_bg.png"
+FILENAMES_SNAKE_COLORS = {GREEN: "../res/menu_snake_green.png", BLUE: "../res/menu_snake_blue.png", CYAN: "../res/menu_snake_cyan.png", PINK: "../res/menu_snake_pink.png"}
+FILENAME_LVL_PREV = "../res/level_prev_{}.png"
+FILENAME_CONTROLS_BG = "../res/menu_controls_bg.png"
+FILENAME_MENU_FRAME = "../res/menu_frame.png"
+FILENAMES_BUTTON = {WidgetState.NORMAL: "../res/menu_button_normal.png", WidgetState.PUSHED: "../res/menu_button_pushed.png", WidgetState.HOVERED: "../res/menu_button_hovered.png"}
+COLOR_WIDGETS = {WidgetState.NORMAL: (76, 123, 209), WidgetState.HOVERED: (111, 164, 255)}
+
+
+# --- Music & Sounds ---
 FILENAMES_MUSIC_TRACKS = [("Bells Song", "../res/bells_song.ogg"), ("Happy Arcade", "../res/happy.mp3"), ("CC Soundtrack 4", "../res/cc_soundtrack4.mp3"),
 						  ("Her Violet Eyes", "../res/HerVioletEyes.mp3"), ("Around The World", "../res/Aroundtheworld.mp3")]
 FILENAME_ITEM_SOUNDS = {utils.Objects.APPLE: "../res/eat.ogg", utils.Objects.MELON: "../res/eat.ogg", utils.Objects.CHILI: "../res/eat.ogg",
 						utils.Objects.COFFEE: "../res/slurp.ogg", utils.Objects.TEA: "../res/slurp.ogg", utils.Objects.BEER: "../res/burp.ogg",
 						utils.Objects.BOMB: "../res/bomb.ogg", utils.Objects.EXPLOSION: "../res/explosion.ogg", utils.Objects.FIRE_SPIT: "../res/fire_spit.ogg"}
 FILENAME_CRASH_SOUND = "../res/crash.ogg"
+
 # --- Fonts & Texts ---
 FONT_COURIER_NEW = "Courier New"
 FONT_SNAKE_CHAN = "../res/SnakeChan-MMoJ.ttf"
@@ -79,13 +99,28 @@ TEXTS_BUTTON_START_MENU = {utils.Language.GERMAN: ["Neues Spiel", "Highscore", "
 TEXTS_BUTTON_PAUSE_MENU = {utils.Language.GERMAN: ["Fortsetzen", "Highscore", "Steuerung", "Optionen", "Zurück zum Hauptmenü"],
 						   utils.Language.ENGLISH: ["Resume", "Highscore", "Controls", "Options", "Back to main menu"]}
 TEXTS_BUTTON_GAME_OVER_MENU = {utils.Language.GERMAN: ["Erneut spielen", "Highscore", "Steuerung", "Optionen", "Zurück zum Hauptmenü"],
-						   utils.Language.ENGLISH: ["Play again", "Highscore", "Controls", "Options", "Back to main menu"]}
-# --- Display parameters ---
-# benchmark screen: 2560x1440
+							   utils.Language.ENGLISH: ["Play again", "Highscore", "Controls", "Options", "Back to main menu"]}
+
+# --- Display parameters (benchmark screen: 2560x1440)---
 BENCHMARK_WIDTH = 2560
 BENCHMARK_HEIGHT = 1440
 SNAKE_NAME_FONT_SIZE = 40
 SNAKE_INFO_FONT_SIZE = 40
 SCORE_FONT_SIZE = 40
 MAP_TO_SCREEN_RATIO = 0.9
-# endregion
+MENU_TOPLEFT = (0, 300)
+MENU_SIZE = (670, 705)
+BUTTON_AREA_START = (36, 267)
+BUTTON_AREA_SIZE = (520, 370)
+BUTTON_HEIGHT = 50
+OPTIONS_TOP_MARGIN = 13
+MENU_AREA_START = (0.01, 0.3)
+BUTTON_FONT_SIZE = 25
+CONTROLS_FONT_SIZE = 35
+LEVEL_MENU_SIZE_FACTOR = 1
+LEVEL_PREV_IMG_SIZE = (115, 115)
+SNAKE_COLOR_IMG_SIZE = (120, 120)
+CONTROL_BG_IMG_SIZE = (200, 200)
+CONTROL_LBL_TO_BG_RATIO = 156 / 442
+MAX_LEN_FOR_TEAM_NAME = 20
+MAX_WIDTH_FOR_TEXT_INPUT = 20

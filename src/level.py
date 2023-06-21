@@ -3,7 +3,6 @@ import copy
 
 # ----- Imports --------
 import utils
-import typing
 import pygame
 from constants import DROP_ITEM_RATE
 
@@ -17,7 +16,6 @@ class Level:
 	"""The class for the levels"""
 
 	def __init__(self, level_info: {}):
-		"""Initialize the level object"""
 		self.name = ""
 		self.id = None
 		self.orig_map = []
@@ -29,7 +27,7 @@ class Level:
 		self.target = None
 		self.bg = None
 		self.highscore = []
-
+		# Read infos from level_info dict
 		for k, v in level_info.items():
 			if k == "map":
 				self.orig_map = utils.strings_to_objects(v)
@@ -43,7 +41,7 @@ class Level:
 				setattr(self, k, v)
 		self.num_cols = len(self.map)
 		self.num_rows = len(self.map[0])
-		# init item list according to their rates
+		# Init item list according to their rates
 		self.items = []
 		for k, v in self.item_rates.items():
 			self.items.extend([utils.string_to_object(k)] * v)
@@ -54,8 +52,7 @@ class Level:
 
 		:param map_str: The map as a list of strings (each string represents one line of the map)
 		:param sep: The separator character in the strings
-		:return: A list with length equal to the number of snakes in the level (usually four), with each element
-		containing a list of tuples denoting the start positions of the respective snake
+		:return: A list with length equal to the number of snakes in the level (usually four), with each element containing a list of tuples denoting the start positions of the respective snake
 		"""
 		start_pos = []
 		for row, line in enumerate(map_str):
@@ -71,5 +68,5 @@ class Level:
 		return start_pos
 
 	def reset(self):
-		"""Reset all variables to their start state"""
+		"""Reset all variables to their start state."""
 		self.map = copy.deepcopy(self.orig_map)

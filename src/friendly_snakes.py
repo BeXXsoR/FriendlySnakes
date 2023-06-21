@@ -6,9 +6,12 @@ friendly_snakes
 |-- communicator (incl. the main game loop)
 |	|-- menu
 |	|-- game
-|	|	|-- graphics
-|	|	|	|-- snake
-|	|	|	|-- level
+|	|	|-- snake
+|	|	|-- level
+|	|-- graphics
+|	|	|-- snake
+|	|	|-- level
+|	|-- level
 Additionally, the utils and constants class are widely used and imported in almost every module.
 """
 

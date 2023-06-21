@@ -3,7 +3,6 @@
 import itertools
 import pygame
 from enum import Enum, Flag, auto
-import typing
 
 pygame.init()
 
@@ -238,17 +237,6 @@ def get_descr_from_pygame_key(pygame_key: int) -> str:
 			   pygame.K_a: "A", pygame.K_b: "B", pygame.K_c: "C", pygame.K_d: "D", pygame.K_e: "E", pygame.K_f: "F", pygame.K_g: "G", pygame.K_h: "H", pygame.K_i: "I", pygame.K_j: "J", pygame.K_k: "K", pygame.K_l: "L", pygame.K_m: "M",
 			   pygame.K_n: "N", pygame.K_o: "O", pygame.K_p: "P", pygame.K_q: "Q", pygame.K_r: "R", pygame.K_s: "S", pygame.K_t: "T", pygame.K_u: "U", pygame.K_v: "V", pygame.K_w: "W", pygame.K_x: "X", pygame.K_y: "Y", pygame.K_z: "Z"}
 	return replace[pygame_key] if pygame_key in replace else pygame.key.name(pygame_key)
-	# descr = pygame.key.name(pygame_key)
-	# replace = {"Up": "↑", "Down": "↓", "Left": "←", "Right": "→", "up": "↑", "down": "↓", "left": "←", "right": "→",
-	# 		   "a": "A", "b": "B", "c": "C", "d": "D", "e": "E", "f": "F", "g": "G", "h": "H", "i": "I", "j": "J", "k": "K", "l": "L", "m": "M",
-	# 		   "n": "N", "o": "O", "p": "P", "q": "Q", "r": "R", "s": "S", "t": "T", "u": "U", "v": "V", "w": "W", "x": "X", "y": "Y", "z": "Z"}
-	# if descr in replace:
-	# 	return replace[descr]
-	# elif len(descr) >= 7 and descr[:6] == "Keypad":
-	# 	return "KP" + descr[-1]
-	# elif len(descr) == 3 and descr[0] == "[" and descr[2] == "]":
-	# 	return "KP" + descr[1]
-	# return descr
 
 
 def get_time_string_for_ms(ms: int) -> str:
