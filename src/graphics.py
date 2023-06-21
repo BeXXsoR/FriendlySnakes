@@ -22,7 +22,8 @@ class Graphics:
 		self.main_surface = main_surface
 		self.scaling_factor = self.main_surface.get_height() / BENCHMARK_HEIGHT
 		self.usable_rect = pygame.Rect(utils.mult_tuple_to_int(self.main_surface.get_size(), (1 - MAP_TO_SCREEN_RATIO) / 2), utils.mult_tuple_to_int(self.main_surface.get_size(), MAP_TO_SCREEN_RATIO))
-		self.bg = pygame.transform.scale(pygame.image.load(FILENAMES_BG[utils.Backgrounds.DESERT]).convert_alpha(), self.main_surface.get_size())
+		self._cached_bgs = {name: pygame.transform.scale(pygame.image.load(filename).convert_alpha(), self.main_surface.get_size()) for (name, filename) in FILENAMES_GAME_BGS}
+		self.bg = list(self._cached_bgs.values())[0]
 		self.edge_size = int(min(self.main_surface.get_width() * MAP_TO_SCREEN_RATIO / num_cols, self.main_surface.get_height() * MAP_TO_SCREEN_RATIO / num_rows))
 		self.square_size = (self.edge_size, self.edge_size)
 		map_size = (self.edge_size * num_cols, self.edge_size * num_rows)
@@ -191,6 +192,15 @@ class Graphics:
 	def grid_to_screen_pos(self, grid_pos: (int, int)) -> (int, int):
 		"""Translates coordinates in the grid to the screen position of the topleft corner of the corresponding rect"""
 		return self.square_posis[grid_pos[0]][grid_pos[1]]
+
+	def change_background(self, bg_name: str) -> None:
+		"""
+		Change the background.
+
+		:param bg_name: Must match one of the background names in constants.BG_ITEMS
+		"""
+		if bg_name in self._cached_bgs:
+			self.bg = self._cached_bgs[bg_name]
 
 	def display_map(self, level: Level):
 		self.update_display(level, [], [], {}, {}, 0)

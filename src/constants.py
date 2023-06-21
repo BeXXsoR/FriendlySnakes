@@ -4,6 +4,7 @@ import utils
 
 # ----- Constants ------
 # region Constants
+
 # --- Colors ---
 GREEN = (0, 153, 0)
 RED = (255, 0, 0)
@@ -31,7 +32,6 @@ MIN_SNAKE_SIZE = 4
 MIN_SNAKE_SPEED = 1
 MAX_SNAKE_SPEED = 1000
 FPS = 60
-MAP_TO_SCREEN_RATIO = 0.9
 DROP_ITEM_RATE = 5
 BOMB_CNTDWN = 9
 EXPLOSION_CNTDWN = 2
@@ -44,7 +44,7 @@ SPEEDING_SUMMANDS = {utils.Objects.COFFEE: 3, utils.Objects.TEA: -3}
 REOCC_DUR = 250
 REOCC_PER_SEC = int(1000 / REOCC_DUR)
 ITEM_SCORES = {utils.Objects.APPLE: 3, utils.Objects.MELON: 6, utils.Objects.COFFEE: 9, utils.Objects.TEA: 0, utils.Objects.BEER: 7, utils.Objects.CHILI: 5}
-# --- Filenames Graphics ---
+# --- Graphics ---
 FILENAME_SNAKE_PARTS = {GREEN: ["../res/snake_head_green.png", "../res/snake_body_straight_green.png", "../res/snake_body_corner_green.png", "../res/snake_tail_green.png"],
 						BLUE: ["../res/snake_head_blue.png", "../res/snake_body_straight_blue.png", "../res/snake_body_corner_blue.png", "../res/snake_tail_blue.png"],
 						CYAN: ["../res/snake_head_cyan.png", "../res/snake_body_straight_cyan.png", "../res/snake_body_corner_cyan.png", "../res/snake_tail_cyan.png"],
@@ -59,33 +59,33 @@ FILENAME_EXPLOSION = "../res/explosion.gif"
 FILENAME_DRUNK = "../res/drunk.gif"
 FILENAME_PIQU_RISING = "../res/piquancy_rising.gif"
 FILENAME_SPEEDO = "../res/speedo.png"
-FILENAMES_BG = {utils.Backgrounds.DESERT: "../res/bg_desert.png"}
+# FILENAMES_BG = {utils.Backgrounds.DESERT: "../res/bg_desert.png"}
 FILENAME_START_BG = "../res/menu_bg.png"
 FILENAME_PAUSE_MENU_BG = "../res/menu_bg.png"
-# --- Filenames Sounds ---
-# FILENAMES_MUSIC_TRACKS = ["../res/bells_song.ogg", "../res/happy.mp3", "../res/cc_soundtrack4.mp3", "../res/cc_soundtrack5.mp3", "../res/HerVioletEyes.mp3", "../res/Aroundtheworld.mp3"]
+FILENAMES_GAME_BGS = [("Desert", "../res/bg_desert.png"), ("Forest", "../res/forest.png"), ("Underwater", "../res/underwater.jpg"),
+					  ("Space", "../res/space.png"), ("Sky", "../res/sunny.png"), ("Night", "../res/full_moon.png")]
+# --- Sounds ---
 FILENAMES_MUSIC_TRACKS = [("Bells Song", "../res/bells_song.ogg"), ("Happy Arcade", "../res/happy.mp3"), ("CC Soundtrack 4", "../res/cc_soundtrack4.mp3"),
 						  ("Her Violet Eyes", "../res/HerVioletEyes.mp3"), ("Around The World", "../res/Aroundtheworld.mp3")]
 FILENAME_ITEM_SOUNDS = {utils.Objects.APPLE: "../res/eat.ogg", utils.Objects.MELON: "../res/eat.ogg", utils.Objects.CHILI: "../res/eat.ogg",
 						utils.Objects.COFFEE: "../res/slurp.ogg", utils.Objects.TEA: "../res/slurp.ogg", utils.Objects.BEER: "../res/burp.ogg",
 						utils.Objects.BOMB: "../res/bomb.ogg", utils.Objects.EXPLOSION: "../res/explosion.ogg", utils.Objects.FIRE_SPIT: "../res/fire_spit.ogg"}
 FILENAME_CRASH_SOUND = "../res/crash.ogg"
-# --- Fonts ---
+# --- Fonts & Texts ---
 FONT_COURIER_NEW = "Courier New"
 FONT_SNAKE_CHAN = "../res/SnakeChan-MMoJ.ttf"
-# --- Display parameters ---
-SNAKE_NAME_FONT_SIZE = 40
-SNAKE_INFO_FONT_SIZE = 40
-SCORE_FONT_SIZE = 40
-BG_ITEMS = [("Desert", 0)]
-# MUSIC_TRACK_ITEMS = [("Bells Song", 0)]
 TEXTS_BUTTON_START_MENU = {utils.Language.GERMAN: ["Neues Spiel", "Highscore", "Steuerung", "Optionen", "Verlassen"],
 						   utils.Language.ENGLISH: ["New game", "Highscore", "Controls", "Options", "Exit"]}
 TEXTS_BUTTON_PAUSE_MENU = {utils.Language.GERMAN: ["Fortsetzen", "Highscore", "Steuerung", "Optionen", "Zurück zum Hauptmenü"],
 						   utils.Language.ENGLISH: ["Resume", "Highscore", "Controls", "Options", "Back to main menu"]}
 TEXTS_BUTTON_GAME_OVER_MENU = {utils.Language.GERMAN: ["Erneut spielen", "Highscore", "Steuerung", "Optionen", "Zurück zum Hauptmenü"],
 						   utils.Language.ENGLISH: ["Play again", "Highscore", "Controls", "Options", "Back to main menu"]}
+# --- Display parameters ---
 # benchmark screen: 2560x1440
 BENCHMARK_WIDTH = 2560
 BENCHMARK_HEIGHT = 1440
+SNAKE_NAME_FONT_SIZE = 40
+SNAKE_INFO_FONT_SIZE = 40
+SCORE_FONT_SIZE = 40
+MAP_TO_SCREEN_RATIO = 0.9
 # endregion

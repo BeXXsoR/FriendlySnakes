@@ -266,8 +266,8 @@ class Menu:
 		# Variables for submenu options
 		self.music_volume = pygame.mixer_music.get_volume()
 		self.sound_volume = 1.0
-		self.cur_track_idx = 0
-		self.cur_bg_idx = 0
+		self.sel_music_track_name = FILENAMES_MUSIC_TRACKS[0][0]
+		self.sel_bg_name = FILENAMES_GAME_BGS[0][0]
 		self.submenu_options = self.init_submenu_options()
 		# Variables for submenu controls
 		self.controls_bg_img = pygame_menu.BaseImage(image_path=FILENAME_CONTROLS_BG, drawing_mode=pygame_menu.baseimage.IMAGE_MODE_FILL).resize(*(utils.mult_tuple_to_int(CONTROL_BG_IMG_SIZE, self.scaling_factor)))
@@ -299,7 +299,7 @@ class Menu:
 		my_widgets = [MyRangeSlider("Music volume", self.music_volume, self.change_music_volume),
 					  MyRangeSlider("Sound volume", self.sound_volume, self.change_sound_volume),
 					  MyDropSelect("Music Track", FILENAMES_MUSIC_TRACKS, self.change_music_track, option_font=FONT_COURIER_NEW),
-					  MyDropSelect("Background", BG_ITEMS, self.change_background, option_font=FONT_COURIER_NEW)]
+					  MyDropSelect("Background", FILENAMES_GAME_BGS, self.change_background, option_font=FONT_COURIER_NEW)]
 		menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=self.button_std_font, widget_font_antialias=True, widget_font_color=WHITE)
 		buttons_offset = self.buttons_surf.get_abs_offset()
 		submenu_options = pygame_menu.Menu("Options", self.buttons_area_rect.w, self.buttons_area_rect.h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=menu_theme)
@@ -782,12 +782,13 @@ class Menu:
 		wdg_set_background(widget, bg_color)
 
 	def change_music_track(self, sel_item_and_index, sel_value, **kwargs) -> None:
-		if sel_value != self.cur_track_idx:
+		if sel_item_and_index[0][0] != self.sel_music_track_name:
 			utils.play_music_track(sel_item_and_index[0][1], self.music_volume)
-			self.cur_track_idx = sel_value
+			self.sel_music_track_name = sel_item_and_index[0][0]
 
 	def change_background(self, sel_item_and_index, sel_value, **kwargs) -> None:
-		pass
+		"""Change the background. Standard callback function of the respective dropselect widget"""
+		self.sel_bg_name = sel_item_and_index[0][0]
 
 	def change_num_players(self, sel_item_and_index, sel_value, **kwargs) -> None:
 		"""Change the number of players. Callback function for the resp. dropdown widget"""
@@ -839,6 +840,16 @@ class Menu:
 		self.snake_colors = colors
 		self.update_submenu_controls(False, True)
 
+	def set_bg_value(self, bg_name: str) -> None:
+		"""Update the selected background in the dropselect widget"""
+		self.sel_bg_name = bg_name
+		self.submenu_options.get_widget("Background").set_value(bg_name)
+
+	def set_music_track_value(self, track_name) -> None:
+		"""Update the selected music track in the dropselect widget"""
+		self.sel_music_track_name = track_name
+		self.submenu_options.get_widget("Music Track").set_value(track_name)
+
 	def set_highscore(self, level_idx: int, highscore: [(str, str)]) -> None:
 		"""Set the highscore for the given level to the given score"""
 		self.highscores[level_idx] = highscore
@@ -857,12 +868,12 @@ class Menu:
 	def get_infos(self) -> (int, int, float, [[int, int, int, int]]):
 		"""
         Return the params needed for outside the menu that might have been changed in the menu
-        :return: Tuple containing [0] the index of the selected level, [1] the number of players, [2] the sound volume, [3] the controls of all four players
+        :return: Tuple containing [0] the index of the selected level, [1] the number of players, [2] the sound volume, [3] the snake controls, [4] the snake colors, [5] the name of the selected background, [6] the name of the selected music track
         """
 		if self.submenu_levels:
-			return self.level_idx, self.num_players, self.sound_volume, self.snake_controls, self.snake_colors
+			return self.level_idx, self.num_players, self.sound_volume, self.snake_controls, self.snake_colors, self.sel_bg_name, self.sel_music_track_name
 		else:
-			return None, None, self.sound_volume, self.snake_controls, self.snake_colors
+			return None, None, self.sound_volume, self.snake_controls, self.snake_colors, self.sel_bg_name, self.sel_music_track_name
 
 	def update_display(self) -> None:
 		"""Display the current state on the screen"""

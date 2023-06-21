@@ -45,6 +45,8 @@ class Communicator:
         self.levels_as_json = self.read_level_infos()
         self.highscores = [level.highscore for level in self.levels]
         self.level = self.levels[self.level_idx]
+        self.bg_name = ""
+        self.music_track_name = FILENAMES_MUSIC_TRACKS[0][0]
         utils.play_music_track(FILENAMES_MUSIC_TRACKS[0][1], 0.1)
         self.sound_volume = 1.0
         self.scaling_factor = self.main_surface.get_height() / BENCHMARK_HEIGHT
@@ -95,7 +97,7 @@ class Communicator:
 
     def update_param_from_menu(self, menu: Menu) -> None:
         """Get the relevant infos from the given menu and update the internal parameters"""
-        level_idx, num_players, new_sound_volume, new_controls, new_colors = menu.get_infos()
+        level_idx, num_players, new_sound_volume, new_controls, new_colors, new_bg_name, new_music_track_name = menu.get_infos()
         if level_idx is not None:
             self.level_idx = level_idx
             self.level = self.levels[self.level_idx]
@@ -122,6 +124,15 @@ class Communicator:
             for menu in [self.start_menu, self.pause_menu, self.game_over_menu]:
                 menu.set_colors(new_colors)
             self.snake_colors = new_colors
+        if self.bg_name != new_bg_name:
+            for menu in [self.start_menu, self.pause_menu, self.game_over_menu]:
+                menu.set_bg_value(new_bg_name)
+                self.bg_name = new_bg_name
+            self.graphics.change_background(new_bg_name)
+        if self.music_track_name != new_music_track_name:
+            for menu in [self.start_menu, self.pause_menu, self.game_over_menu]:
+                menu.set_music_track_value(new_music_track_name)
+            self.music_track_name = new_music_track_name
 
     def set_start_screen(self):
         self.main_surface.blit(self.start_bg_img, (0, 0))
