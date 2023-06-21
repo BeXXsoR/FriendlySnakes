@@ -291,18 +291,15 @@ class Menu:
 		control_labels = [submenu_controls.add.label(utils.get_descr_from_pygame_key(pygame_key), label_id=lbl_id, padding=0, font_name=FONT_COURIER_NEW, font_size=int(CONTROLS_FONT_SIZE * self.scaling_factor), float=True)
 						  for pygame_key, lbl_id in zip(self.snake_controls[self.sel_player_id_in_submenu_controls], CONTROLS_LABEL_IDS)]
 		change_button = self.add_widget_from_mywidget(MyButton("Change", self.change_controls), submenu_controls)
-
 		sel_color = self.add_widget_from_mywidget(MyDropSelect("", COLOR_ITEMS, self.change_color, default=self.sel_player_id_in_submenu_controls, id=SNAKE_COLOR_SEL_ID, option_font=FONT_COURIER_NEW), submenu_controls)
 		snake_img = submenu_controls.add.image(self.snake_color_imgs[self.snake_colors[self.sel_player_id_in_submenu_controls]], image_id=SNAKE_COLOR_IMG_ID, padding=0)
 		self.set_std_params(sel_color, sel_color.get_size(), FONT_COURIER_NEW, self.font_size, True)
-
 		self.set_std_params(sel_player, self.button_size, self.button_font_name, self.font_size, True)
 		self.set_std_params(change_button, utils.mult_tuple_to_int(change_button.get_size(), 1.1), FONT_COURIER_NEW, self.font_size, True)
 		free_space = int((submenu_controls.get_height() - 3 * self.button_size[1] - control_bg_img.get_height()) / 3)
 		block_height = self.button_size[1] + free_space
 		top_margin = int(OPTIONS_TOP_MARGIN * self.scaling_factor)
 		main_frame = submenu_controls.add.frame_v(self.buttons_area_rect.w, self.buttons_area_rect.h + 2 * top_margin, padding=0)
-
 		vert_margin_right = int(0.5 * (block_height - change_button.get_height()))
 		hor_frame_height = max(sel_color.get_height() + snake_img.get_height(), control_bg_img.get_height() + change_button.get_height()) + 2 * vert_margin_right
 		hor_frame = submenu_controls.add.frame_h(main_frame.get_width(), hor_frame_height, padding=0)
@@ -329,8 +326,6 @@ class Menu:
 		main_frame.pack(hor_frame)
 		self.add_back_button(submenu_controls, main_frame, max(1, int(0.9 * (block_height - change_button.get_height()))))
 		if not enable_controls_change:
-			assert isinstance(sel_player, pygame_menu.widgets.Selector), f"Expected selector, got {type(sel_player)} instead."
-			sel_player.update_items(PLAYER_ITEMS[:self.num_players])
 			change_button.hide()
 			sel_color.hide()
 		submenu_controls.resize(*main_frame.get_size())
@@ -381,13 +376,13 @@ class Menu:
 		main_frame.pack(submenu_levels.add.vertical_margin(top_margin))
 		red_block_rate = 0.875
 		# Pack widgets into the frame and add an appropriate vertical margin between them
-		wdg_params = [(play_button, True, 1.1 * block_height),
-					  (sel_num_players, True, red_block_rate * block_height),
-					  (sel_level, True, red_block_rate * block_height - 13 * self.scaling_factor),
-					  (level_img, False, 0)]
-		for (wdg, set_std, block_trg_h) in wdg_params:
+		wdg_params = [(play_button, True, 1.1 * block_height, self.button_font_name),
+					  (sel_num_players, True, red_block_rate * block_height, FONT_COURIER_NEW),
+					  (sel_level, True, red_block_rate * block_height - 13 * self.scaling_factor, FONT_COURIER_NEW),
+					  (level_img, False, 0, self.button_font_name)]
+		for (wdg, set_std, block_trg_h, font_name) in wdg_params:
 			if set_std:
-				wdg = self.set_std_params(wdg, self.button_size, self.button_font_name, self.font_size, True)
+				wdg = self.set_std_params(wdg, self.button_size, font_name, self.font_size, True)
 			main_frame.pack(wdg, align=pygame_menu.locals.ALIGN_CENTER)
 			if (diff := block_trg_h - wdg.get_height()) > 0:
 				main_frame.pack(submenu_levels.add.vertical_margin(diff))
@@ -690,9 +685,6 @@ class Menu:
 	def change_num_players(self, sel_item_and_index, sel_value, **kwargs) -> None:
 		"""Change the number of players. Standard Callback function of the resp. selector widget."""
 		self.num_players = sel_value
-		sel_player = self.submenu_controls.get_widget(PLAYER_SEL_ID)
-		assert isinstance(sel_player, pygame_menu.widgets.Selector), f"Expected selector, got {type(sel_player)} instead."
-		sel_player.update_items(PLAYER_ITEMS[:self.num_players])
 		if "widget" in kwargs and isinstance(wdg := kwargs["widget"], pygame_menu.widgets.Widget):
 			self.adjust_font_size_to_fit_trg_wdg_size(wdg, self.button_size)
 			self.set_wdg_background(wdg, self.button_size)

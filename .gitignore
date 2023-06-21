@@ -4,3 +4,4 @@ workspace.xml
 __pycache__
 info.txt
 levels_backup.json
+/build_win64/

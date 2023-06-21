@@ -6,7 +6,10 @@ A stand-alone installer can be found here: <Add GitHub repo for installer>
 TODO: Add info about installer (different GitHub repo)
 
 ## How To Play
-The game is played on one device. Each player controls their snake with four keyboard keys. The default keys are shown below. To customize the keys, choose "Controls" in the start menu.
+The game is mostly self-explanatory. Just try it out and see what happens :).
+
+If you still like to know some infos beforehand, go ahead:
+The game is played on one device. Each player controls their snake with four keyboard keys. The default keys and colors are shown below. To customize them, choose "Controls" in the start menu.
 
 |Action|Player 1|Player 2|Player 3|Player 4|
 |:-----|:------:|:------:|:------:|:------:|
@@ -15,17 +18,24 @@ The game is played on one device. Each player controls their snake with four key
 |Move snake left|Left arrow|A|KP4|J|
 |Move snake right|Right arrow|D|KP6|L|
 
+|Player|Default color|
+|:-----|:------:|
+|Player 1|Green|
+|Player 2|Blue|
+|Player 3|Cyan|
+|Player 4|Pink|
+
 Each snake moves with a certain speed that can be affected by items like coffee or tea. The faster a snake moves, the harder it is to control (obviously). When a snake hits a wall, another snake or itself, or when it gets burned by fire or explosions, the game is over.
 
 ### Items
 Here is an overview about the various items in the game:
-- Apple: Grow the snake by 1
-- Watermelon: Grow the snake by 3
-- Coffee: Increase the snakes speed by 3
-- Tea: Decrease the snakes speed speed by 3
-- Beer: Reverse the snakes controls for ten seconds (i.e. switch up<->down and left<->right)
-- Chili: Uh-Oh. The snake can't handle so much spice. For three seconds, the snakes mouth will get hotter and hotter. After that, the snake will spit fire for two seconds. If it burns another snake or itself, the game is over.
-- Bomb: Get the hell outta here! The bomb explodes after nine seconds, burning everything in a 3x3 square around it. If a snake is in that square or enters it while the explosion is still firing, the game is over.
+- **Apple**: Grow the snake by 1
+- **Watermelon**: Grow the snake by 3
+- **Coffee**: Increase the snakes speed by 3
+- **Tea**: Decrease the snakes speed speed by 3
+- **Beer**: Reverse the snakes controls for ten seconds (i.e. switch up<->down and left<->right)
+- **Chili**: Uh-Oh. The snake can't handle so much spice. For three seconds, the snakes mouth will get hotter and hotter. After that, the snake will spit fire for two seconds. If it burns another snake or itself, the game is over.
+- **Bomb**: Get the hell outta here! The bomb explodes after nine seconds, burning everything in a 3x3 square around it. If a snake is in that square or enters it while the explosion is still firing, the game is over.
   - Bombs can be pushed! If a snake hits a bomb before it explodes, it moves in the respective direction as long as it hits an undestroyable object (like a wall) or a snake. Items in a bombs way will be erased. But be aware that the snakes are only strong enough to push a single bomb. If you try to push two bombs that are one behind the other, or if you try to push a bomb when there's a wall behind it, you crash!
 
 ## Prerequesites (for using the python code)
@@ -40,4 +50,4 @@ In case of problems contact me on Discord (BeXXsor) or GitHub.
 
 ## Credits
 - Game design and implementation: **Thomas Schneider**
-- All credits: see "Credits.md"
+- Further credits: see "Credits.md"
