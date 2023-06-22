@@ -21,8 +21,9 @@ class Graphics:
 		self.main_surface = main_surface
 		self.scaling_factor = self.main_surface.get_height() / BENCHMARK_HEIGHT
 		self.usable_rect = pygame.Rect(utils.mult_tuple_to_int(self.main_surface.get_size(), (1 - MAP_TO_SCREEN_RATIO) / 2), utils.mult_tuple_to_int(self.main_surface.get_size(), MAP_TO_SCREEN_RATIO))
-		self._cached_bgs = {name: pygame.transform.scale(pygame.image.load(filename).convert_alpha(), self.main_surface.get_size()) for (name, filename) in FILENAMES_GAME_BGS}
-		self.bg = list(self._cached_bgs.values())[0]
+		self._cached_bgs = {name: pygame.transform.scale(pygame.image.load(filename).convert_alpha(), self.main_surface.get_size()) for name, (filename, _) in FILENAMES_GAME_BGS_WITH_SCORE_COLORS.items()}
+		self.bg_name = list(self._cached_bgs.keys())[0]
+		self.bg = self._cached_bgs[self.bg_name]
 		self.edge_size = int(min(self.main_surface.get_width() * MAP_TO_SCREEN_RATIO / num_cols, self.main_surface.get_height() * MAP_TO_SCREEN_RATIO / num_rows))
 		self.square_size = (self.edge_size, self.edge_size)
 		map_size = (self.edge_size * num_cols, self.edge_size * num_rows)
@@ -170,16 +171,21 @@ class Graphics:
 				drunk_font = self.snake_info_font.render(str(int(snake.is_drunk / REOCC_PER_SEC)), True, BLACK if snake.is_drunk > 3 else RED)
 				surf.blit(drunk_font, drunk_font.get_rect(center=self.snake_drunk_rect.center))
 		# Draw score, time and target
+		goal_str = f"GOAL: "
 		score_str = f"SCORE: {sum(snake.score for snake in snakes):3d}"
 		time_str = f"TIME: {utils.get_time_string_for_ms(pygame.time.get_ticks() - paused_time)}"
 		if level.goal == utils.Goals.HIGHSCORE:
+			goal_str += "Highscore"
 			score_str += " / {}".format(level.target)
 		elif level.goal == utils.Goals.SURVIVE:
+			goal_str += "Survive"
 			time_str += " / {}".format(utils.get_time_string_for_ms(level.target * 1000))
-		score_font = self.score_font.render(score_str, True, BG_COLOR)
-		time_font = self.score_font.render(time_str, True, BG_COLOR)
-		self.main_surface.blit(score_font, score_font.get_rect(topleft=utils.add_two_tuples(self.score_rect.topleft, (0, score_font.get_height()))))
-		self.main_surface.blit(time_font, time_font.get_rect(topleft=utils.add_two_tuples(self.score_rect.topleft, (0, 3 * score_font.get_height()))))
+		goal_font = self.score_font.render(goal_str, True, score_color := FILENAMES_GAME_BGS_WITH_SCORE_COLORS[self.bg_name][1])
+		score_font = self.score_font.render(score_str, True, score_color)
+		time_font = self.score_font.render(time_str, True, score_color)
+		self.main_surface.blit(goal_font, score_font.get_rect(topleft=utils.add_two_tuples(self.score_rect.topleft, (0, goal_font.get_height()))))
+		self.main_surface.blit(score_font, score_font.get_rect(topleft=utils.add_two_tuples(self.score_rect.topleft, (0, 4 * score_font.get_height()))))
+		self.main_surface.blit(time_font, time_font.get_rect(topleft=utils.add_two_tuples(self.score_rect.topleft, (0, 6 * score_font.get_height()))))
 		pygame.display.update()
 
 	def grid_to_screen_pos(self, grid_pos: (int, int)) -> (int, int):
@@ -193,6 +199,7 @@ class Graphics:
 		:param bg_name: Must match one of the background names in constants.BG_ITEMS
 		"""
 		if bg_name in self._cached_bgs:
+			self.bg_name = bg_name
 			self.bg = self._cached_bgs[bg_name]
 
 	def display_map(self, level: Level):

@@ -23,6 +23,8 @@ CYAN = (51, 255, 255)
 ORANGE = (255, 128, 0)
 GREY = (192, 192, 192)
 BLACK = (0, 0, 0)
+COLOR_WIDGET_NORMAL = (76, 123, 209)
+COLOR_WIDGET_HOVERED = (111, 164, 255)
 BG_COLOR = (167, 226, 247)
 
 # --- Game parameters ---
@@ -49,9 +51,9 @@ SPIT_FIRE_DURATION = 2
 SPIT_FIRE_RANGE = 2
 GROWING_SIZES = {utils.Objects.APPLE: 1, utils.Objects.MELON: 3}
 SPEEDING_SUMMANDS = {utils.Objects.COFFEE: 3, utils.Objects.TEA: -3}
+ITEM_SCORES = {utils.Objects.APPLE: 3, utils.Objects.MELON: 6, utils.Objects.COFFEE: 9, utils.Objects.TEA: 0, utils.Objects.BEER: 7, utils.Objects.CHILI: 5}
 REOCC_DUR = 250
 REOCC_PER_SEC = int(1000 / REOCC_DUR)
-ITEM_SCORES = {utils.Objects.APPLE: 3, utils.Objects.MELON: 6, utils.Objects.COFFEE: 9, utils.Objects.TEA: 0, utils.Objects.BEER: 7, utils.Objects.CHILI: 5}
 
 # --- Graphics In-Game ---
 FILENAME_SNAKE_PARTS = {GREEN: ["../res/snake_head_green.png", "../res/snake_body_straight_green.png", "../res/snake_body_corner_green.png", "../res/snake_tail_green.png"],
@@ -68,8 +70,8 @@ FILENAME_EXPLOSION = "../res/explosion.gif"
 FILENAME_DRUNK = "../res/drunk.gif"
 FILENAME_PIQU_RISING = "../res/piquancy_rising.gif"
 FILENAME_SPEEDO = "../res/speedo.png"
-FILENAMES_GAME_BGS = [("Desert", "../res/bg_desert.png"), ("Forest", "../res/forest.png"), ("Underwater", "../res/underwater.jpg"),
-					  ("Space", "../res/space.png"), ("Sky", "../res/sunny.png"), ("Night", "../res/full_moon.png")]
+FILENAMES_GAME_BGS_WITH_SCORE_COLORS = {"Desert": ("../res/bg_desert.png", BG_COLOR), "Forest": ("../res/forest.png", BG_COLOR), "Underwater": ("../res/underwater.jpg", BLUE),
+										"Space": ("../res/space.png", BG_COLOR), "Sky": ("../res/sunny.png", BLUE), "Night": ("../res/full_moon.png", BG_COLOR)}
 FILENAME_LEVEL_INFO = "../res/levels.json"
 
 # --- Graphics Menu ---
@@ -80,15 +82,16 @@ FILENAME_LVL_PREV = "../res/level_prev_{}.png"
 FILENAME_CONTROLS_BG = "../res/menu_controls_bg.png"
 FILENAME_MENU_FRAME = "../res/menu_frame.png"
 FILENAMES_BUTTON = {WidgetState.NORMAL: "../res/menu_button_normal.png", WidgetState.PUSHED: "../res/menu_button_pushed.png", WidgetState.HOVERED: "../res/menu_button_hovered.png"}
-COLOR_WIDGETS = {WidgetState.NORMAL: (76, 123, 209), WidgetState.HOVERED: (111, 164, 255)}
-
+COLOR_WIDGETS = {WidgetState.NORMAL: COLOR_WIDGET_NORMAL, WidgetState.HOVERED: COLOR_WIDGET_HOVERED}
 
 # --- Music & Sounds ---
-FILENAMES_MUSIC_TRACKS = [("Bells Song", "../res/bells_song.ogg"), ("Happy Arcade", "../res/happy.mp3"), ("CC Soundtrack 4", "../res/cc_soundtrack4.mp3"),
-						  ("Her Violet Eyes", "../res/HerVioletEyes.mp3"), ("Around The World", "../res/Aroundtheworld.mp3")]
-FILENAME_ITEM_SOUNDS = {utils.Objects.APPLE: "../res/eat.ogg", utils.Objects.MELON: "../res/eat.ogg", utils.Objects.CHILI: "../res/eat.ogg",
-						utils.Objects.COFFEE: "../res/slurp.ogg", utils.Objects.TEA: "../res/slurp.ogg", utils.Objects.BEER: "../res/burp.ogg",
-						utils.Objects.BOMB: "../res/bomb.ogg", utils.Objects.EXPLOSION: "../res/explosion.ogg", utils.Objects.FIRE_SPIT: "../res/fire_spit.ogg"}
+FILENAMES_MUSIC_TRACKS = {"Bells Song": "../res/bells_song.ogg", "Happy Arcade": "../res/happy.mp3", "CC Soundtrack 4": "../res/cc_soundtrack4.mp3",
+						  "Her Violet Eyes": "../res/HerVioletEyes.mp3", "Around The World": "../res/Aroundtheworld.mp3"}
+# MUSIC_TRACK_ITEMS = [("Bells Song", "../res/bells_song.ogg"), ("Happy Arcade", "../res/happy.mp3"), ("CC Soundtrack 4", "../res/cc_soundtrack4.mp3"),
+# 					 ("Her Violet Eyes", "../res/HerVioletEyes.mp3"), ("Around The World", "../res/Aroundtheworld.mp3")]
+FILENAMES_ITEM_SOUNDS = {utils.Objects.APPLE: "../res/eat.ogg", utils.Objects.MELON: "../res/eat.ogg", utils.Objects.CHILI: "../res/eat.ogg",
+						 utils.Objects.COFFEE: "../res/slurp.ogg", utils.Objects.TEA: "../res/slurp.ogg", utils.Objects.BEER: "../res/burp.ogg",
+						 utils.Objects.BOMB: "../res/bomb.ogg", utils.Objects.EXPLOSION: "../res/explosion.ogg", utils.Objects.FIRE_SPIT: "../res/fire_spit.ogg"}
 FILENAME_CRASH_SOUND = "../res/crash.ogg"
 
 # --- Fonts & Texts ---

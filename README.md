@@ -5,8 +5,16 @@ Friendly Snakes is a multiplayer cooperative variant of the classic snake game. 
 The repository already contains a ready-to-use executable file for win64. Just download the zip file (i.e. click the green *Code*-button in the top right, then choose *Download ZIP*), unpack it, navigate to the *build_win64* directory and open *friendly_snakes.exe*.
 If you have a GitHub account, you can of course just clone the repo as well instead of downloading the zip.
 
+## Start Menu
+In the menu you find the following options:
+- New Game: Select level and number of players and start a new game
+- Highscore: View highscores
+- Controls: Change the snakes colors and controls
+- Options: Change the music track and volume, the sound volume and the in-game background
+- Exit: Exit the game
+
 ## How To Play
-The game is mostly self-explanatory. Just try it out and see what happens :).
+The game itself is mostly self-explanatory. Just try it out and see what happens :).
 
 If you still like to know some infos beforehand, read ahead:
 The game is played on one device. Each player controls their snake with four keyboard keys. The default keys and colors are shown below. To customize them, choose "Controls" in the start menu.
@@ -17,6 +25,7 @@ The game is played on one device. Each player controls their snake with four key
 |Move snake down|Down arrow|S|KP5|K|
 |Move snake left|Left arrow|A|KP4|J|
 |Move snake right|Right arrow|D|KP6|L|
+|Pause the game|ESC|ESC|ESC|ESC|
 
 |Player|Default color|
 |:-----|:------:|
@@ -26,6 +35,7 @@ The game is played on one device. Each player controls their snake with four key
 |Player 4|Pink|
 
 Each snake moves with a certain speed that can be affected by items like coffee or tea. The faster a snake moves, the harder it is to control (obviously). When a snake hits a wall, another snake or itself, or when it gets burned by fire or explosions, the game is over.
+There are two types of levels: Highscore and Survive. In Highscore levels, the goal is to reach as many points as possible, while in Survive levels you want to survive as long as possible without crashing. You can see the type of a level in the top right of the game screen.
 
 ### Items
 Here is an overview about the various items in the game:

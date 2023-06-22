@@ -40,8 +40,8 @@ class Communicator:
         self.highscores = [level.highscore for level in self.levels]
         self.level = self.levels[self.level_idx]
         self.bg_name = ""
-        self.music_track_name = FILENAMES_MUSIC_TRACKS[0][0]
-        utils.play_music_track(FILENAMES_MUSIC_TRACKS[0][1], 0.1)
+        self.music_track_name = list(FILENAMES_MUSIC_TRACKS.keys())[0]
+        utils.play_music_track(FILENAMES_MUSIC_TRACKS[self.music_track_name], 0.1)
         self.sound_volume = 1.0
         self.scaling_factor = self.main_surface.get_height() / BENCHMARK_HEIGHT
         self.start_bg_img = pygame.transform.scale(pygame.image.load(FILENAME_START_BG).convert_alpha(), self.main_surface.get_size())
@@ -81,7 +81,7 @@ class Communicator:
         self.graphics = Graphics(self.main_surface, self.level.num_rows, self.level.num_cols)
         self.upd_snake_events = [pygame.event.Event(event_id, {"snake_idx": idx}) for idx, event_id in enumerate(UPDATE_SNAKES)]
         self.reocc_event = pygame.event.Event(REOCC_TIMER, {"duration": REOCC_DUR})
-        self.item_sounds = {k: pygame.mixer.Sound(v) for k, v in FILENAME_ITEM_SOUNDS.items()}
+        self.item_sounds = {k: pygame.mixer.Sound(v) for k, v in FILENAMES_ITEM_SOUNDS.items()}
         self.crash_sound = pygame.mixer.Sound(FILENAME_CRASH_SOUND)
         self.sounds_all = list(self.item_sounds.values()) + [self.crash_sound]
         self.paused = False
@@ -159,7 +159,7 @@ class Communicator:
         cnt = 0
         while self.start_menu.handle_events():
             self.update_param_from_menu(self.start_menu)
-            # Show Map - only relevant for taking screenshots of a map to use it for the preview images in the level selection screen
+            # # Show Map - only relevant for taking screenshots of a map to use it for the preview images in the level selection screen
             # return self.show_map()
             self.game = Game(self.snake_names[:self.num_players], self.snake_colors[:self.num_players], self.snake_controls[:self.num_players], self.level)
             if cnt > 0:

@@ -17,6 +17,8 @@ pygame.init()
 NUM_PLAYER_ITEMS = [("1", 1), ("2", 2), ("3", 3), ("4", 4)]
 PLAYER_ITEMS = [("Player 1", 0), ("Player 2", 1), ("Player 3", 2), ("Player 4", 3)]
 COLOR_ITEMS = [("Green", GREEN), ("Blue", BLUE), ("Cyan", CYAN), ("Pink", PINK)]
+MUSIC_TRACK_ITEMS = [(k, v) for k, v in FILENAMES_MUSIC_TRACKS.items()]
+GAME_BG_ITEMS = [(k, v[0]) for k, v in FILENAMES_GAME_BGS_WITH_SCORE_COLORS.items()]
 LEVEL_PREV_IMG_ID = "Level_Prev_Img"
 CONTROLS_LABEL_IDS = ("Control_Up", "Control_Left", "Control_Down", "Control_Right")
 CONTROLS_BG_IMG_ID = "Controls_Background"
@@ -229,8 +231,8 @@ class Menu:
 		# Variables for submenu options
 		self.music_volume = pygame.mixer_music.get_volume()
 		self.sound_volume = 1.0
-		self.sel_music_track_name = FILENAMES_MUSIC_TRACKS[0][0]
-		self.sel_bg_name = FILENAMES_GAME_BGS[0][0]
+		self.sel_music_track_name = MUSIC_TRACK_ITEMS[0][0]
+		self.sel_bg_name = GAME_BG_ITEMS[0][0]
 		self.submenu_options = self.init_submenu_options()
 		# Variables for submenu controls
 		self.controls_bg_img = pygame_menu.BaseImage(image_path=FILENAME_CONTROLS_BG, drawing_mode=pygame_menu.baseimage.IMAGE_MODE_FILL).resize(*(utils.mult_tuple_to_int(CONTROL_BG_IMG_SIZE, self.scaling_factor)))
@@ -260,8 +262,8 @@ class Menu:
 		"""Initialize and return the submenu for the options."""
 		my_widgets = [MyRangeSlider("Music volume", self.music_volume, self.change_music_volume),
 					  MyRangeSlider("Sound volume", self.sound_volume, self.change_sound_volume),
-					  MyDropSelect("Music Track", FILENAMES_MUSIC_TRACKS, self.change_music_track, option_font=FONT_COURIER_NEW),
-					  MyDropSelect("Background", FILENAMES_GAME_BGS, self.change_background, option_font=FONT_COURIER_NEW)]
+					  MyDropSelect("Music Track", MUSIC_TRACK_ITEMS, self.change_music_track, option_font=FONT_COURIER_NEW),
+					  MyDropSelect("Background", GAME_BG_ITEMS, self.change_background, option_font=FONT_COURIER_NEW)]
 		menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=self.button_std_font, widget_font_antialias=True, widget_font_color=WHITE)
 		buttons_offset = self.buttons_surf.get_abs_offset()
 		submenu_options = pygame_menu.Menu("Options", self.buttons_area_rect.w, self.buttons_area_rect.h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=menu_theme)
