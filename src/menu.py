@@ -440,7 +440,7 @@ class Menu:
         """
 		wdg_id = my_wdg.id if hasattr(my_wdg, "id") and my_wdg.id else my_wdg.title
 		if isinstance(my_wdg, MyRangeSlider):
-			wdg = menu.add.range_slider(my_wdg.title, my_wdg.default, (0, 1), 0.01, rangeslider_id=wdg_id, range_text_value_enabled=False, slider_text_value_enabled=False, value_format=lambda x: str(int(x * 100)), onchange=my_wdg.onchange)
+			wdg = menu.add.range_slider(my_wdg.title, my_wdg.default, (0, 1), 0.01, rangeslider_id=wdg_id, range_text_value_enabled=False, slider_text_value_enabled=False, value_format=lambda x: str(int(x * 100)), onchange=my_wdg.onchange, width=int(150 * self.scaling_factor))
 		elif isinstance(my_wdg, MyButton):
 			wdg = menu.add.button(my_wdg.title, my_wdg.action)
 		elif isinstance(my_wdg, MyDropSelect):
@@ -474,6 +474,7 @@ class Menu:
 			wdg.set_onmouseleave(self.mouse_leave_widget)
 		wdg.set_selection_effect()
 		wdg.set_font(font if font else self.button_std_font, font_size if font_size > 0 else self.font_size, WHITE, WHITE, WHITE, WHITE, None, True)
+		self.adjust_font_size_to_fit_trg_wdg_size(wdg, size)
 		self.set_wdg_background(wdg, size)
 		return wdg
 
