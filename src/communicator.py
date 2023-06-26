@@ -175,6 +175,7 @@ class Communicator:
         self.paused_time = pygame.time.get_ticks()
         while not self.back_to_main_menu:
             self.game_loop()
+        self.reset_timer(True)
 
     def pause_game(self) -> bool:
         """Pause the game. Return True if user wants to resume and False for exit."""
