@@ -2,8 +2,8 @@
 Friendly Snakes is a multiplayer cooperative variant of the classic snake game. Up to four players each control their own snake, eating (and drinking) items that change the snakes size, speed, controls, avoiding fire, bombs and explosions, surviving as long as possible while getting larger and larger. But the larger the snakes, the less room there is to maneuver, and suddenly your snake might be trapped without an escape route. Work together and let the snakes shine!
 
 ## Installation
-The repository already contains a ready-to-use executable file for win64. Just download the zip file (i.e. click the green *Code*-button in the top right, then choose *Download ZIP*), unpack it, navigate to the *build_win64* directory and open *friendly_snakes.exe*.
-If you have a GitHub account, you can of course just clone the repo as well instead of downloading the zip.
+The repository already contains a ready-to-use executable file for win64. Just download the zip file for the latest release (you can see the releases on the right hand side of the Github page), unpack it, navigate to the *build_win64* directory and open *friendly_snakes.exe*.
+If you have a GitHub account, you can of course just clone the repo instead of downloading the zip.
 
 ## Start Menu
 In the menu you find the following options:
