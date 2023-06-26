@@ -1,7 +1,6 @@
 """Module for the snake class in the friendly snakes package"""
 
 # ----- Imports --------
-import utils
 from constants import *
 import pygame
 

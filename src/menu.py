@@ -367,7 +367,7 @@ class Menu:
 		"""Init the submenu for the level and player number selection screen"""
 		menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title=False, widget_alignment=pygame_menu.locals.ALIGN_CENTER, widget_font=self.button_font_name, widget_font_antialias=True, widget_font_color=WHITE)
 		buttons_offset = self.buttons_surf.get_abs_offset()
-		menu_w, menu_h = utils.mult_tuple_to_int(self.buttons_area_rect.size, LEVEL_MENU_SIZE_FACTOR)
+		menu_w, menu_h = self.buttons_area_rect.size
 		submenu_levels = pygame_menu.Menu("Level Selection", menu_w, menu_h, position=(buttons_offset[0], buttons_offset[1], False), enabled=False, theme=menu_theme)
 		play_button = self.add_widget_from_mywidget(MyButton("Play", self.start_new_game), submenu_levels)
 		sel_num_players = self.add_widget_from_mywidget(MySelector("Player Count: ", NUM_PLAYER_ITEMS, self.num_players - 1, self.change_num_players), submenu_levels)

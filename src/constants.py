@@ -15,13 +15,11 @@ class WidgetState(Enum):
 # --- Colors ---
 GREEN = (0, 153, 0)
 RED = (255, 0, 0)
-YELLOW = (255, 255, 0)
 BLUE = (0, 0, 255)
 WHITE = (255, 255, 255)
 PINK = (255, 51, 255)
 CYAN = (51, 255, 255)
 ORANGE = (255, 128, 0)
-GREY = (192, 192, 192)
 BLACK = (0, 0, 0)
 COLOR_WIDGET_NORMAL = (76, 123, 209)
 COLOR_WIDGET_HOVERED = (111, 164, 255)
@@ -38,7 +36,7 @@ ROTATIONS_CORNER = {(ORIENT_DOWN, ORIENT_LEFT): 90, (ORIENT_LEFT, ORIENT_DOWN): 
 					(ORIENT_DOWN, ORIENT_RIGHT): 0, (ORIENT_RIGHT, ORIENT_DOWN): 180,
 					(ORIENT_UP, ORIENT_LEFT): 180, (ORIENT_LEFT, ORIENT_UP): 0,
 					(ORIENT_UP, ORIENT_RIGHT): 270, (ORIENT_RIGHT, ORIENT_UP): 90}
-MIN_SNAKE_SIZE = 4
+# MIN_SNAKE_SIZE = 4
 MIN_SNAKE_SPEED = 1
 MAX_SNAKE_SPEED = 1000
 FPS = 60
@@ -87,8 +85,6 @@ COLOR_WIDGETS = {WidgetState.NORMAL: COLOR_WIDGET_NORMAL, WidgetState.HOVERED: C
 # --- Music & Sounds ---
 FILENAMES_MUSIC_TRACKS = {"Bells Song": "../res/bells_song.ogg", "Happy Arcade": "../res/happy.mp3", "CC Soundtrack 4": "../res/cc_soundtrack4.mp3",
 						  "Her Violet Eyes": "../res/HerVioletEyes.mp3", "Around The World": "../res/Aroundtheworld.mp3"}
-# MUSIC_TRACK_ITEMS = [("Bells Song", "../res/bells_song.ogg"), ("Happy Arcade", "../res/happy.mp3"), ("CC Soundtrack 4", "../res/cc_soundtrack4.mp3"),
-# 					 ("Her Violet Eyes", "../res/HerVioletEyes.mp3"), ("Around The World", "../res/Aroundtheworld.mp3")]
 FILENAMES_ITEM_SOUNDS = {utils.Objects.APPLE: "../res/eat.ogg", utils.Objects.MELON: "../res/eat.ogg", utils.Objects.CHILI: "../res/eat.ogg",
 						 utils.Objects.COFFEE: "../res/slurp.ogg", utils.Objects.TEA: "../res/slurp.ogg", utils.Objects.BEER: "../res/burp.ogg",
 						 utils.Objects.BOMB: "../res/bomb.ogg", utils.Objects.EXPLOSION: "../res/explosion.ogg", utils.Objects.FIRE_SPIT: "../res/fire_spit.ogg"}
@@ -105,7 +101,6 @@ TEXTS_BUTTON_GAME_OVER_MENU = {utils.Language.GERMAN: ["Erneut spielen", "Highsc
 							   utils.Language.ENGLISH: ["Play again", "Highscore", "Controls", "Options", "Back to main menu"]}
 
 # --- Display parameters (benchmark screen: 2560x1440)---
-BENCHMARK_WIDTH = 2560
 BENCHMARK_HEIGHT = 1440
 SNAKE_NAME_FONT_SIZE = 40
 SNAKE_INFO_FONT_SIZE = 40
@@ -117,11 +112,9 @@ BUTTON_AREA_START = (36, 267)
 BUTTON_AREA_SIZE = (520, 370)
 BUTTON_HEIGHT = 50
 OPTIONS_TOP_MARGIN = 13
-MENU_AREA_START = (0.01, 0.3)
 BUTTON_FONT_SIZE = 25
 CONTROLS_FONT_SIZE = 35
 SEL_OPTION_FONT_SIZE = 25
-LEVEL_MENU_SIZE_FACTOR = 1
 LEVEL_PREV_IMG_SIZE = (115, 115)
 SNAKE_COLOR_IMG_SIZE = (120, 120)
 CONTROL_BG_IMG_SIZE = (200, 200)
