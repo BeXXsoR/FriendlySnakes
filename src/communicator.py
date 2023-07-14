@@ -93,6 +93,8 @@ class Communicator:
         """Get the relevant infos from the given menu and update the internal parameters."""
         level_idx, num_players, new_sound_volume, new_controls, new_colors, new_bg_name, new_music_track_name = menu.get_infos()
         if level_idx is not None:
+            for menu in [self.start_menu, self.pause_menu, self.game_over_menu]:
+                menu.set_level_in_submenu_highscore(level_idx)
             self.level_idx = level_idx
             self.level = self.levels[self.level_idx]
         if num_players:

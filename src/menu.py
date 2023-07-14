@@ -309,7 +309,7 @@ class Menu:
 		right_frame_height = control_bg_img.get_height() + change_button.get_height() + vert_margin_right
 		# hor_frame_height = max(left_frame_height, right_frame_height)
 		hor_frame = submenu_controls.add.frame_h(main_frame.get_width(), max(left_frame_height, right_frame_height), padding=0)
-		vert_frames = [submenu_controls.add.frame_v(0.5 * hor_frame.get_width(), hor_frame.get_height(), padding=0) for _ in range(2)]
+		vert_frames = [submenu_controls.add.frame_v(int(0.5 * hor_frame.get_width()), hor_frame.get_height(), padding=0) for _ in range(2)]
 		main_frame.pack(submenu_controls.add.vertical_margin(top_margin))
 		main_frame.pack(sel_player, align=pygame_menu.locals.ALIGN_CENTER)
 		main_frame.pack(submenu_controls.add.vertical_margin(max(1, block_height - sel_player.get_height())))
@@ -670,6 +670,11 @@ class Menu:
 
 	def mouse_over_widget(self, widget: pygame_menu.widgets.Widget, event: pygame.event.Event) -> None:
 		"""Handle a mouseover on the given widget."""
+		# If the focus rect of the previous selected widget overlaps with the widget that the mouse is on, we ignore the mouseover to not interfere with that previous widget.
+		# This happens for example when dropdown selects overlap with the widget beneath it.
+		if last_sel_widget := [wdg for wdg in widget.get_menu().get_widgets() if wdg.is_selected() and wdg is not widget]:
+			if last_sel_widget[0].get_focus_rect().colliderect(widget.get_rect(to_real_position=True)):
+				return
 		bg_color = self.button_base_imgs[WidgetState.HOVERED] if isinstance(widget, pygame_menu.widgets.Button) else COLOR_WIDGETS[WidgetState.HOVERED]
 		wdg_set_background(widget, bg_color)
 		widget.select(True, True)
@@ -685,7 +690,7 @@ class Menu:
 			self.sel_music_track_name = sel_item_and_index[0][0]
 
 	def change_background(self, sel_item_and_index, sel_value, **kwargs) -> None:
-		"""Change the in-game background. Standard callback function of the respective dropselect widget."""
+		"""Change the in-game background. Standard callback function of the resp. dropselect widget."""
 		self.sel_bg_name = sel_item_and_index[0][0]
 
 	def change_num_players(self, sel_item_and_index, sel_value, **kwargs) -> None:
@@ -718,6 +723,13 @@ class Menu:
 			self.adjust_font_size_to_fit_trg_wdg_size(wdg, self.button_size)
 			self.set_wdg_background(wdg, self.button_size)
 		self.update_submenu_highscore()
+
+	def set_level_in_submenu_highscore(self, level_idx: int) -> None:
+		"""Set the selected level in the highscore menu"""
+		wdg = self.submenu_highscore.get_widget("Level: ")
+		wdg.set_value(level_idx)
+		item = (self.level_names[level_idx], level_idx)
+		self.change_level_in_submenu_highscore(item, level_idx, widget=wdg)
 
 	def set_sound_volume(self, volume: float) -> None:
 		"""Set the given volume as the default value for the sound volume widget"""
